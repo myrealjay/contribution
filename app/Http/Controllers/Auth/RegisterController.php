@@ -7,6 +7,9 @@ use App\Http\Controllers\Controller;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Facades\Validator;
 use Illuminate\Foundation\Auth\RegistersUsers;
+use Illuminate\Support\Facades\Cache;
+use Illuminate\Support\Facades\Mail;
+use App\Mail\SendMailable;
 
 class RegisterController extends Controller
 {
@@ -28,7 +31,7 @@ class RegisterController extends Controller
      *
      * @var string
      */
-    protected $redirectTo = '/home';
+    protected $redirectTo = '/confirm';
 
     /**
      * Create a new controller instance.
@@ -52,6 +55,7 @@ class RegisterController extends Controller
             'name' => ['required', 'string', 'max:255'],
             'email' => ['required', 'string', 'email', 'max:255', 'unique:users'],
             'password' => ['required', 'string', 'min:6', 'confirmed'],
+            'phone' => ['required', 'string', 'min:11'],
         ]);
     }
 
@@ -63,10 +67,18 @@ class RegisterController extends Controller
      */
     protected function create(array $data)
     {
+        $a = mt_rand(100000,999999);
+        Cache::put('myCache', $a, 2);
+        $x = Cache::get('myCache');
+        $message = $x;
+       Mail::to($data['email'])->send(new SendMailable($message));
+     #   dd($x);
         return User::create([
             'name' => $data['name'],
             'email' => $data['email'],
             'password' => Hash::make($data['password']),
+            'phone' => $data['phone'],
         ]);
+
     }
 }

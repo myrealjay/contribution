@@ -14,3 +14,22 @@
 Route::get('/', function () {
     return view('welcome');
 });
+
+Auth::routes();
+
+Route::get('/home', 'HomeController@index')->name('home');
+
+Route::get('/send/email', 'HomeController@mail');
+
+Route::get('/confirm', 'AdminController@confirm');
+
+Route::post('/verifynow', 'AdminController@verifynow');
+
+Route::post('/reg_scheme', 'AdminController@reg_scheme');
+
+Route::get('/new_scheme', 'AdminController@new_scheme');
+
+
+#Auth::routes();
+
+#Route::get('/home', 'HomeController@index');
