@@ -60,5 +60,11 @@ class AdminController extends Controller
             return redirect('/new_scheme');
     }
 
+    public function MyScheme()
+    {
+        $Scheme = admin::all();
+        return view('admin.MyScheme');
+    }
+
     
 }

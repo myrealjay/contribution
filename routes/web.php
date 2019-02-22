@@ -29,6 +29,8 @@ Route::post('/reg_scheme', 'AdminController@reg_scheme');
 
 Route::get('/new_scheme', 'AdminController@new_scheme');
 
+Route::get('/MyScheme', 'AdminController@MyScheme');
+
 
 #Auth::routes();
 
