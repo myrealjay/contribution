@@ -81,6 +81,27 @@ class UserController extends Controller
 		return response()->json(compact('data'),201);
 	}
 
+	public function verifynow(Request $request)
+	{
+		$validator = Validator::make($request->all(), [
+			'token'=>  'required'
+		]);
+
+		if($validator->fails()){
+			return response()->json($validator->errors()->toJson(), 400);
+		}
+       $x = Cache::get('myCache');
+
+       if ($request->token == $x) {
+            return response()->json(compact('data'),201);
+        }
+        else{
+            return response()->json(['incorrect token'], 404);
+        }
+		
+	#	return response()->json(compact('data'),201);
+	}
+
 	public function getAuthenticatedUser()
 	{
 		try {
@@ -105,5 +126,37 @@ class UserController extends Controller
 
 		return response()->json(compact('user'));
 	}
+
+	public function RegMember(Request $request)
+	{
+		$validator = Validator::make($request->all(), [
+			'Name'=>  'required',
+            'email'=>  'required',
+            'phone'=>  'required'
+		]);
+
+		if($validator->fails()){
+			return response()->json($validator->errors()->toJson(), 400);
+		}
+       for ($i=0; $i < count($email); $i++) { 
+            Member::create([
+            'name' => $name[$i],
+            'email' => $email[$i],
+            'phone' => $phone[$i],
+            'scheme' => $request['Scheme'],
+            'amount' => $request['amount'],
+        ]);
+        }
+        #:::::::::::GET THE NAME OF THE USER AND SAVE IN $inv:::::::::::::
+        $inv = \Auth::user()->name;
+         #:::::::::::GET THE NAME OF THE USER AND SAVE IN $inv:::::::::::::
+
+        #::::::::::SENDING MAIL TO EACH SCHEME MEMBERS::::::::::::::
+        $message = 'by '.$inv.'. the group will be contriuting NGN'.$request['amount'].' per week which will be disbussed to selected members every week in a round robin format. Login using the link below in order to join new members of the scheme';
+       Mail::to($request['email'])->send(new Members_mail($message));
+		
+		return response()->json(compact($request->all()),201);
+	}
+
 
 }

@@ -20,7 +20,7 @@
 					@endif
 					<!--:::::GETTING THE ERROR::::-->
 					@if (Session::has('info'))
-					<div class="alert alert-info">
+					<div class="alert alert-danger">
 						<ul>
 							{{Session::get('info')}}
 						</ul>
@@ -40,10 +40,10 @@
 
 					<div class="form-group">
 						<label>Total Members</label>
-						<input type="text" onkeypress="allowNumbersOnly(event)" id="onlyNumbers" name="Members" class="form-control">
+						<input type="number" min="5" max="50" onkeypress="allowNumbersOnly(event)" id="onlyNumbers" name="Members" class="form-control">
 					</div>
 
-					<input type="submit" name="chk" value="confirm" class="btn btn-primary">
+					<input type="submit" name="chk" value="continue" class="btn btn-primary">
 
 				</form>
 
