@@ -43,12 +43,7 @@ class UserController extends Controller
 		if($validator->fails()){
 			return response()->json($validator->errors()->toJson(), 400);
 		}
-		/****
-		$a = mt_rand(100000,999999);
-		Cache::put('myCache', $a, 2);
-		$x = Cache::get('myCache');
-		dd($x);
-		*****/
+	
 		$a = mt_rand(100000,999999);
         Cache::put('myCache', $a, 2);
         $x = Cache::get('myCache');
