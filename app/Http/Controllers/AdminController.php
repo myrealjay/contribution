@@ -57,6 +57,7 @@ class AdminController extends Controller
             'Name' => $request['Name'],
             'Amount' => $request['Amount'],
             'Members' => $request['Members'],
+            'creator' => $request['Email'],
         ]);
 
          Session::put('Scheme', $request['Name']);
@@ -74,7 +75,7 @@ class AdminController extends Controller
     public function MyScheme()
     {
         $Scheme = admin::all();
-        return view('admin.MyScheme')->with('admin', $Scheme);
+        return view('admin.MyScheme', compact('Scheme'));
     }
 
     public function RegMember(Request $request)

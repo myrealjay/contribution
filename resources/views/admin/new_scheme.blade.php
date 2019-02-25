@@ -31,7 +31,7 @@
 						<label>Enter Scheme Name</label>
 						<input type="text" name="Name" class="form-control">
 					</div>
-					<input type="hidden" name="Email" value="{!! Auth::user()->name !!}">
+					<input type="hidden" name="Email" value="{!! Auth::user()->email !!}">
 
 					<div class="form-group">
 						<label>Amount to be contributed</label>

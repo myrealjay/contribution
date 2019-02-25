@@ -37,8 +37,8 @@
 				<h3>Members</h3>
 				<form method="post" action="{{ url('RegMember') }}">
 					{{csrf_field()}}
-					<input type="hidden" name="Scheme[]" value="{{ $row->Name }}">
-					<input type="hidden" name="amount[]" value="{{ $row->Amount }}">
+					<input type="hidden" name="Scheme" value="{{ $row->Name }}">
+					<input type="hidden" name="amount" value="{{ $row->Amount }}">
 					<div id="putThemHere">
 						<label for="box-'+i+'">Admin </label>&nbsp;<input id="box-'+i+'" name="name[]" type="text" value="{{ Auth::user()->name }}" readonly="" style="width: 25%" /> <label for="box-'+i+'"> Email</label>&nbsp;<input id="box-'+i+'" name="email[]" type="email" value="{{ Auth::user()->email }}" readonly="" style="width: 25%" /> <label for="box-'+i+'">Phone </label>&nbsp;<input id="box-'+i+'" name="phone[]" value="{{ Auth::user()->phone }}" readonly="" type="text" style="width: 25%" /><br>
 					</div>
