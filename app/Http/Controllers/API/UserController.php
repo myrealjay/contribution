@@ -86,6 +86,27 @@ class UserController extends Controller
 		return response()->json(compact('data'),201);
 	}
 
+	public function verifynow(Request $request)
+	{
+		$validator = Validator::make($request->all(), [
+			'token'=>  'required'
+		]);
+
+		if($validator->fails()){
+			return response()->json($validator->errors()->toJson(), 400);
+		}
+       $x = Cache::get('myCache');
+
+       if ($request->token == $x) {
+            return response()->json(compact('data'),201);
+        }
+        else{
+            return response()->json(['incorrect token'], 404);
+        }
+		
+	#	return response()->json(compact('data'),201);
+	}
+
 	public function getAuthenticatedUser()
 	{
 		try {
