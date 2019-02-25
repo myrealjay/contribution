@@ -23,6 +23,8 @@ Route::post('login', 'UserController@authenticate');
 
 Route::post('new_scheme', 'UserController@new_scheme');
 
+Route::post('RegMember', 'UserController@RegMember');
+
 Route::get('open', 'DataController@open');
 
 Route::group(['middleware' => ['jwt.verify']], function() {

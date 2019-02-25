@@ -111,4 +111,34 @@ class UserController extends Controller
 		return response()->json(compact('user'));
 	}
 
+	public function RegMember(Request $request)
+	{
+		$validator = Validator::make($request->all(), [
+			'Name'=>  'required',
+            'email'=>  'required',
+            'phone'=>  'required'
+		]);
+
+		if($validator->fails()){
+			return response()->json($validator->errors()->toJson(), 400);
+		}
+       for ($i=0; $i < count($email); $i++) { 
+            Member::create([
+            'name' => $name[$i],
+            'email' => $email[$i],
+            'phone' => $phone[$i],
+            'scheme' => $request['Scheme'],
+            'amount' => $request['amount'],
+        ]);
+        }
+        $inv = \Auth::user()->name;
+
+        #::::::::::SENDING MAIL TO EACH SCHEME MEMBERS::::::::::::::
+        $message = 'by '.$inv.'. the group will be contriuting NGN'.$request['amount'].' per week which will be disbussed to selected members every week in a round robin format. Login using the link below in order to join new members of the scheme';
+       Mail::to($request['email'])->send(new Members_mail($message));
+		
+		return response()->json(compact($request->all()),201);
+	}
+
+
 }
