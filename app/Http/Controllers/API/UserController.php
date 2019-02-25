@@ -152,7 +152,9 @@ class UserController extends Controller
             'amount' => $request['amount'],
         ]);
         }
+        #:::::::::::GET THE NAME OF THE USER AND SAVE IN $inv:::::::::::::
         $inv = \Auth::user()->name;
+         #:::::::::::GET THE NAME OF THE USER AND SAVE IN $inv:::::::::::::
 
         #::::::::::SENDING MAIL TO EACH SCHEME MEMBERS::::::::::::::
         $message = 'by '.$inv.'. the group will be contriuting NGN'.$request['amount'].' per week which will be disbussed to selected members every week in a round robin format. Login using the link below in order to join new members of the scheme';
