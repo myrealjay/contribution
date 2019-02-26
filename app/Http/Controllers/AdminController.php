@@ -3,6 +3,7 @@
 namespace App\Http\Controllers;
 
 use App\Admin;
+use App\User;
 use Mail;
 use App\Member;
 use Session;
@@ -28,9 +29,14 @@ class AdminController extends Controller
     {
         $x = Cache::get('myCache');
         $this->validate($request,[
-            'token'=>  'required'
+            'email'=>  'email',
+            'token'=>  'required',
         ]);
         if ($request->token == $x) {
+            $email = $request->email;
+            User::where('email', $email)->update([
+            'confirm' => 2, 
+        ]); 
             Session::flash('info','Token is correct');
             return redirect('/home');
         }
@@ -74,8 +80,14 @@ class AdminController extends Controller
 
     public function MyScheme()
     {
-        $Scheme = admin::all();
-        return view('admin.MyScheme', compact('Scheme'));
+        $email = \Auth::user()->email;
+        $Scheme = Member::where('email', $email)->get();
+       return view('admin.MyScheme', compact('Scheme'));
+    }
+
+    public function view_members(Request $request)
+    {
+        $name = $request[''];
     }
 
     public function RegMember(Request $request)

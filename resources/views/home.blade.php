@@ -2,10 +2,13 @@
 
 @section('content')
 <div class="container">
-    <div class="row">
+	<div class="row">
 
+		@if(Auth::user()->confirm != 2)
+		<meta http-equiv="refresh" content="0;URL=confirm" />
+		@endif
 
-<!--:::::THE SESSION::::::-->
+		<!--:::::THE SESSION::::::-->
 		@if (Session::has('info'))
 		<div class="alert alert-info">
 			<ul>
@@ -16,6 +19,6 @@
 		<!--:::::THE SESSION::::::-->
 
 
-    </div>
+	</div>
 </div>
 @endsection
