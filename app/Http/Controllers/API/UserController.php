@@ -22,10 +22,10 @@ class UserController extends Controller
 
 		try {
 			if (! $token = JWTAuth::attempt($credentials)) {
-				return response()->json(['error' => 'invalid_credentials'], 400);
+				return response()->json(['error' => 'invalid_credentials'], 200);
 			}
 		} catch (JWTException $e) {
-			return response()->json(['error' => 'could_not_create_token'], 500);
+			return response()->json(['error' => 'could_not_create_token'], 200);
 		}
 
 		return response()->json(compact('token'));
@@ -36,16 +36,16 @@ class UserController extends Controller
 		$validator = Validator::make($request->all(), [
 			'name' => 'required|string|max:255',
 			'email' => 'required|string|email|max:255|unique:users',
-			'password' => 'required|string|min:6|confirmed',
+			'password' => 'required|string',
 			'phone' => ['required', 'string', 'min:11'],
 		]);
 
 		if($validator->fails()){
-			return response()->json($validator->errors()->toJson(), 400);
+			return response()->json($validator->errors()->toJson(), 200);
 		}
 	
 		$a = mt_rand(100000,999999);
-        Cache::put('myCache', $a, 2);
+        Cache::put('myCache', $a, 4220);
         $x = Cache::get('myCache');
         $message = $x;
        $user = User::create([
@@ -58,7 +58,7 @@ class UserController extends Controller
 		
 		$token = JWTAuth::fromUser($user);
 
-		return response()->json(compact('user','token'),201);
+		return response()->json(compact('user','token'),200);
 	}
 
 	public function new_scheme(Request $request)
@@ -78,7 +78,7 @@ class UserController extends Controller
             'Members' => $request['Members'],
 		]);
 		
-		return response()->json(compact('data'),201);
+		return response()->json(compact('data'),200);
 	}
 
 	public function verifynow(Request $request)
@@ -93,7 +93,7 @@ class UserController extends Controller
        $x = Cache::get('myCache');
 
        if ($request->token == $x) {
-            return response()->json(compact('data'),201);
+            return response()->json(['message'=>'successful'],200);
         }
         else{
             return response()->json(['incorrect token'], 404);
@@ -107,20 +107,20 @@ class UserController extends Controller
 		try {
 
 			if (! $user = JWTAuth::parseToken()->authenticate()) {
-				return response()->json(['user_not_found'], 404);
+				return response()->json(['user_not_found'], 200);
 			}
 
 		} catch (Tymon\JWTAuth\Exceptions\TokenExpiredException $e) {
 
-			return response()->json(['token_expired'], $e->getStatusCode());
+			return response()->json(['token_expired'], 200);
 
 		} catch (Tymon\JWTAuth\Exceptions\TokenInvalidException $e) {
 
-			return response()->json(['token_invalid'], $e->getStatusCode());
+			return response()->json(['token_invalid'], 200);
 
 		} catch (Tymon\JWTAuth\Exceptions\JWTException $e) {
 
-			return response()->json(['token_absent'], $e->getStatusCode());
+			return response()->json(['token_absent'], 200);
 
 		}
 
