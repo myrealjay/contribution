@@ -39,6 +39,10 @@ Route::get('/AddMembers', 'AdminController@AddMembers');
 
 Route::post('/RegMember', 'AdminController@RegMember');
 
+Route::post('/chk_scheme', 'AdminController@chk_scheme');
+
+Route::post('/join', 'AdminController@join');
+
 Route::post('/view_members', 'AdminController@view_members');
 
 

@@ -19,6 +19,7 @@
 						<td>NGN {{ $row->amount }} </td>
 						<td>
 							<form method="post" action="{{ url('/view_members') }}">
+								{{ csrf_field() }}
 								<input type="hidden" name="name" value="{{ $row->scheme }}">
 								<input type="submit" name="submit" value="view members" class="btn btn-link">
 							</form>
