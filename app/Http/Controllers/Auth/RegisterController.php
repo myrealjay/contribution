@@ -68,7 +68,7 @@ class RegisterController extends Controller
     protected function create(array $data)
     {
         $a = mt_rand(100000,999999);
-        Cache::put('myCache', $a, 4320);
+        Cache::put('myCache', $a, 10);
         $x = Cache::get('myCache');
         $message = $x;
        Mail::to($data['email'])->send(new SendMailable($message));
