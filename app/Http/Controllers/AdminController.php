@@ -151,6 +151,22 @@ public function RegMember(Request $request)
             'amount' => $request['amount'],
         ]);
     }
+    #:::::COLLECT THE BELOW DATA::::::
+    $name = \Auth::user()->name;
+    $email = \Auth::user()->email;
+    $phone = \Auth::user()->phone;
+    #:::::HERE THE SCHEME CREATOR IS THE FIRST ACTIVE MEMBER OF THE SCHEME::::::::
+    Scheme_member::create([
+        'scheme' => $request['Scheme'],
+        'name' => $name,
+        'email' => $email,
+        'phone' => $phone,
+        'amount' => $request['amount'],
+    ]);
+    #::::THE SCHEME CREATOR SHOULD BE AN ACTIVE MEMBER::::::
+    Member::where('email', $email)->update([
+                'active' => 1, 
+            ]); 
 
     $inv = \Auth::user()->name;
 
