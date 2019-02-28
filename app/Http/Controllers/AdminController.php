@@ -111,61 +111,72 @@ class AdminController extends Controller
 
         if (!$data->isEmpty()) 
         {
+            $chk = Scheme_member::where('scheme', $scheme)
+            ->where('email', $email)->get();
+            if (!$chk->isEmpty()) {
+               Session::flash('not_found','you are already a member of this scheme');
+               return redirect('/home');
+           }
+           else{
             Session::put('scheme', $scheme);
             $data = Member::where('scheme', $scheme)->get();
             return view('admin.join', compact('data'));
-        } 
-        else 
-        {
-            Session::flash('not_found','no record found');
-        return redirect('/home');
         }
-
+    } 
+    else 
+    {
+        Session::flash('not_found','no record found');
+        return redirect('/home');
     }
 
-    public function RegMember(Request $request)
-    {
-        $this->validate($request,[
-            'email'=>  'required',
-            'phone'=>  'required'
-        ]);
+}
+
+public function RegMember(Request $request)
+{
+    $this->validate($request,[
+        'email'=>  'required',
+        'phone'=>  'required'
+    ]);
     #    dd($request->all());
-        $email = $request['email'];
-        $phone = $request['phone'];
-        $name = $request['name'];
+    $email = $request['email'];
+    $phone = $request['phone'];
+    $name = $request['name'];
 
-        for ($i=0; $i < count($email); $i++) { 
-            Member::create([
-                'name' => $name[$i],
-                'email' => $email[$i],
-                'phone' => $phone[$i],
-                'scheme' => $request['Scheme'],
-                'amount' => $request['amount'],
-            ]);
-        }
-        
-        $inv = \Auth::user()->name;
-
-        #::::::::::SENDING MAIL TO EACH SCHEME MEMBERS::::::::::::::
-        $message = 'by '.$inv.'. the group will be contriuting NGN'.$request['amount'].' per week which will be disbussed to selected members every week in a round robin format. Login using the link below in order to join new members of the scheme';
-        Mail::to($request['email'])->send(new Members_mail($message));
-
-        Session::flash('info','Scheme registration successful');
-        return redirect('/home');
-    }
-
-    public function join(Request $request)
-    {
-        Scheme_member::create([
-            'scheme' => $request['scheme'],
-            'name' => $request['name'],
-            'email' => $request['email'],
-            'phone' => $request['phone'],
+    for ($i=0; $i < count($email); $i++) { 
+        Member::create([
+            'name' => $name[$i],
+            'email' => $email[$i],
+            'phone' => $phone[$i],
+            'scheme' => $request['Scheme'],
             'amount' => $request['amount'],
         ]);
-        Session::flash('info','you have been sucessfully registered as an active member of '.$request["scheme"].' scheme');
-        return redirect('/home');
     }
 
-    
+    $inv = \Auth::user()->name;
+
+        #::::::::::SENDING MAIL TO EACH SCHEME MEMBERS::::::::::::::
+    $message = 'by '.$inv.'. the group will be contriuting NGN'.$request['amount'].' per week which will be disbussed to selected members every week in a round robin format. Login using the link below in order to join new members of the scheme';
+    Mail::to($request['email'])->send(new Members_mail($message));
+
+    Session::flash('info','Scheme registration successful');
+    return redirect('/home');
+}
+
+public function join(Request $request)
+{
+    Scheme_member::create([
+        'scheme' => $request['scheme'],
+        'name' => $request['name'],
+        'email' => $request['email'],
+        'phone' => $request['phone'],
+        'amount' => $request['amount'],
+    ]);
+    Member::where('email', $email)->update([
+                'active' => 1, 
+            ]); 
+    Session::flash('info','you have been sucessfully registered as an active member of '.$request["scheme"].' scheme');
+    return redirect('/home');
+}
+
+
 }

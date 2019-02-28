@@ -21,7 +21,7 @@
 						<td> {{ $row->email }} </td>
 						<td> {{ $row->phone }} </td>
 					</tr>
-
+{$row->phone}
 
 					@endforeach
 				</table>

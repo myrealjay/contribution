@@ -91,12 +91,14 @@ class UserController extends Controller
 	public function join(Request $request)
 	{
 		$data = Scheme_member::create([
-            'scheme' => $request['scheme'],
-            'name' => $request['name'],
-            'email' => $request['email'],
-            'phone' => $request['phone'],
-            'amount' => $request['amount'],
-        ]);
+			'scheme' => $request['scheme'],
+			'name' => $request['name'],
+			'email' => $request['email'],
+			'phone' => $request['phone'],
+			'amount' => $request['amount'],
+		]);
+		Member::where('email', $email)->update([
+                'active' => 1,
 		
 		return response()->json(compact('data'),200);
 	}
@@ -114,6 +116,20 @@ class UserController extends Controller
 	{
 		$name = $request['name'];
 		$data = Member::where('scheme', $name)->get();
+		return response()->json(compact('data'),200);
+	}
+
+	public function join(Request $request)
+	{
+		
+		Scheme_member::create([
+			'scheme' => $request['scheme'],
+			'name' => $request['name'],
+			'email' => $request['email'],
+			'phone' => $request['phone'],
+			'amount' => $request['amount'],
+		]);
+		$data = ('info','you have been sucessfully registered as an active member of '.$request["scheme"].' scheme');
 		return response()->json(compact('data'),200);
 	}
 
@@ -161,8 +177,17 @@ class UserController extends Controller
 
 		if (!$data->isEmpty()) 
 		{
-			$data = Member::where('scheme', $scheme)->get();
-			return response()->json(compact('data'),200);
+ 			$chk = Scheme_member::where('scheme', $scheme)
+			->where('email', $email)->get();
+			if (!$chk->isEmpty()) {
+				$data = ('you are already a member of this scheme');
+				return response()->json(compact('data'),200);
+			}
+			else{
+
+				$data = Member::where('scheme', $scheme)->get();
+				return response()->json(compact('data'),200);
+			}
 		}
 		else{
 			return response()->json(['no record found'], 404);
