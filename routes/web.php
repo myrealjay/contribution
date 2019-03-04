@@ -12,7 +12,11 @@
 */
 
 Route::get('/', function () {
-    return view('welcome');
+    return view('landing');
+});
+
+Route::get('/about', function () {
+    return view('about');
 });
 
 Auth::routes();
@@ -34,6 +38,10 @@ Route::get('/MyScheme', 'AdminController@MyScheme');
 Route::get('/AddMembers', 'AdminController@AddMembers');
 
 Route::post('/RegMember', 'AdminController@RegMember');
+
+Route::post('/chk_scheme', 'AdminController@chk_scheme');
+
+Route::post('/join', 'AdminController@join');
 
 Route::post('/view_members', 'AdminController@view_members');
 

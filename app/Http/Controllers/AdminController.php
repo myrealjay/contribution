@@ -6,6 +6,7 @@ use App\Admin;
 use App\User;
 use Mail;
 use App\Member;
+use App\Scheme_member;
 use Session;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Cache;
@@ -13,6 +14,10 @@ use App\Mail\Members_mail;
 
 class AdminController extends Controller
 {
+    public function __construct(){
+
+        $this->middleware('auth');
+    }
     /**
      * Display a listing of the resource.
      *
@@ -35,8 +40,8 @@ class AdminController extends Controller
         if ($request->token == $x) {
             $email = $request->email;
             User::where('email', $email)->update([
-            'confirm' => 2, 
-        ]); 
+                'confirm' => 2, 
+            ]); 
             Session::flash('info','Token is correct');
             return redirect('/home');
         }
@@ -59,16 +64,16 @@ class AdminController extends Controller
             'Members'=>  'required'
         ]);
         
-         Admin::create([
+        Admin::create([
             'Name' => $request['Name'],
             'Amount' => $request['Amount'],
             'Members' => $request['Members'],
             'creator' => $request['Email'],
         ]);
 
-         Session::put('Scheme', $request['Name']);
-         Session::flash('info','Registration successful');
-            return redirect('/AddMembers');
+        Session::put('Scheme', $request['Name']);
+        Session::flash('info','Registration successful');
+        return redirect('/AddMembers');
     }
 
     public function AddMembers()
@@ -82,44 +87,112 @@ class AdminController extends Controller
     {
         $email = \Auth::user()->email;
         $Scheme = Member::where('email', $email)->get();
-       return view('admin.MyScheme', compact('Scheme'));
+        return view('admin.MyScheme', compact('Scheme'));
     }
 
     public function view_members(Request $request)
     {
-        $name = $request[''];
+        $name = $request['name'];
+        Session::put('Scheme', $name);
+        $data = Member::where('scheme', $name)->get();
+        return view('admin.SchMember', compact('data'));
     }
 
-    public function RegMember(Request $request)
+    public function chk_scheme(Request $request)
     {
         $this->validate($request,[
-            'email'=>  'required',
-            'phone'=>  'required'
+            'scheme'=>  'required'
         ]);
-    #    dd($request->all());
-        $email = $request['email'];
-        $phone = $request['phone'];
-        $name = $request['name'];
+        $email = \Auth::user()->email;
+        $scheme = $request['scheme'];
 
-        for ($i=0; $i < count($email); $i++) { 
-            Member::create([
+        $data = Member::where('scheme', $scheme)
+        ->where('email', $email)->get();
+
+        if (!$data->isEmpty()) 
+        {
+            $chk = Scheme_member::where('scheme', $scheme)
+            ->where('email', $email)->get();
+            if (!$chk->isEmpty()) {
+               Session::flash('not_found','you are already a member of this scheme');
+               return redirect('/home');
+           }
+           else{
+            Session::put('scheme', $scheme);
+            $data = Member::where('scheme', $scheme)->get();
+            return view('admin.join', compact('data'));
+        }
+    } 
+    else 
+    {
+        Session::flash('not_found','no record found');
+        return redirect('/home');
+    }
+
+}
+
+public function RegMember(Request $request)
+{
+    $this->validate($request,[
+        'email'=>  'required',
+        'phone'=>  'required'
+    ]);
+    #    dd($request->all());
+    $email = $request['email'];
+    $phone = $request['phone'];
+    $name = $request['name'];
+
+    for ($i=0; $i < count($email); $i++) { 
+        Member::create([
             'name' => $name[$i],
             'email' => $email[$i],
             'phone' => $phone[$i],
             'scheme' => $request['Scheme'],
             'amount' => $request['amount'],
         ]);
-        }
-        
-        $inv = \Auth::user()->name;
+    }
+    #:::::COLLECT THE BELOW DATA::::::
+    $name = \Auth::user()->name;
+    $email = \Auth::user()->email;
+    $phone = \Auth::user()->phone;
+    #:::::HERE THE SCHEME CREATOR IS THE FIRST ACTIVE MEMBER OF THE SCHEME::::::::
+    Scheme_member::create([
+        'scheme' => $request['Scheme'],
+        'name' => $name,
+        'email' => $email,
+        'phone' => $phone,
+        'amount' => $request['amount'],
+    ]);
+    #::::THE SCHEME CREATOR SHOULD BE AN ACTIVE MEMBER::::::
+    Member::where('email', $email)->update([
+                'active' => 1, 
+            ]); 
+
+    $inv = \Auth::user()->name;
 
         #::::::::::SENDING MAIL TO EACH SCHEME MEMBERS::::::::::::::
-        $message = 'by '.$inv.'. the group will be contriuting NGN'.$request['amount'].' per week which will be disbussed to selected members every week in a round robin format. Login using the link below in order to join new members of the scheme';
-       Mail::to($request['email'])->send(new Members_mail($message));
+    $message = 'by '.$inv.'. the group will be contriuting NGN'.$request['amount'].' per week which will be disbussed to selected members every week in a round robin format. Login using the link below in order to join new members of the scheme';
+    Mail::to($request['email'])->send(new Members_mail($message));
 
-         Session::flash('info','Registration successful');
-            return redirect('/home');
-    }
+    Session::flash('info','Scheme registration successful');
+    return redirect('/home');
+}
 
-    
+public function join(Request $request)
+{
+    Scheme_member::create([
+        'scheme' => $request['scheme'],
+        'name' => $request['name'],
+        'email' => $request['email'],
+        'phone' => $request['phone'],
+        'amount' => $request['amount'],
+    ]);
+    Member::where('email', $email)->update([
+                'active' => 1, 
+            ]); 
+    Session::flash('info','you have been sucessfully registered as an active member of '.$request["scheme"].' scheme');
+    return redirect('/home');
+}
+
+
 }

@@ -5,6 +5,8 @@ namespace App\Http\Controllers\API;
 #use Illuminate\Http\Request;
 use App\User;
 use App\Admin;
+use App\Member;
+use App\Scheme_member;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Facades\Validator;
@@ -49,7 +51,7 @@ class UserController extends Controller
 		}
 	
 		$a = mt_rand(100000,999999);
-		Cache::put('myCache', $a, 4320);
+		Cache::put('myCache', $a, 10);
 		$x = Cache::get('myCache');
 		$message = $x;
 		$user = User::create([
@@ -67,6 +69,7 @@ class UserController extends Controller
 
 	public function new_scheme(Request $request)
 	{
+		$email=\Auth::user()->email;
 		$validator = Validator::make($request->all(), [
 			'Name'=>  'required|unique:admins',
 			'Amount'=>  'required',
@@ -80,15 +83,32 @@ class UserController extends Controller
 			'Name' => $request['Name'],
 			'Amount' => $request['Amount'],
 			'Members' => $request['Members'],
+			'creator'=>$email
 		]);
 		
 		return response()->json(compact('data'),200);
 	}
 
-	public function MyScheme()
+	public function join(Request $request)
 	{
+		$data = Scheme_member::create([
+			'scheme' => $request['scheme'],
+			'name' => $request['name'],
+			'email' => $request['email'],
+			'phone' => $request['phone'],
+			'amount' => $request['amount'],
+		]);
+		Member::where('email', $email)->update([
+			'active' => 1,
+		]);
+
+			return response()->json(compact('data'),200);
+		}
+
+		public function MyScheme()
+		{
 	#::::::::::::GET THE EMAIL FROM YOUR END::::::::::::::::::
-		$email = \Auth::user()->email;
+			$email = \Auth::user()->email;
 		#::::::::::::GET THE EMAIL FROM YOUR END::::::::::::::::::
 		$scheme = Member::where('email', $email)->get();
 		return response()->json(compact('scheme'),200);
@@ -164,6 +184,22 @@ class UserController extends Controller
 					'amount' => $request['amount'],
 				]);
 			}
+		#:::::COLLECT THE BELOW DATA::::::
+			$name = \Auth::user()->name;
+			$email = \Auth::user()->email;
+			$phone = \Auth::user()->phone;
+    #:::::HERE THE SCHEME CREATOR IS THE FIRST ACTIVE MEMBER OF THE SCHEME::::::::
+			Scheme_member::create([
+				'scheme' => $request['Scheme'],
+				'name' => $name,
+				'email' => $email,
+				'phone' => $phone,
+				'amount' => $request['amount'],
+			]);
+    #::::THE SCHEME CREATOR SHOULD BE AN ACTIVE MEMBER::::::
+			Member::where('email', $email)->update([
+				'active' => 1, 
+			]); 
         #:::::::::::GET THE NAME OF THE USER AND SAVE IN $inv:::::::::::::
 			$inv = \Auth::user()->name;
          #:::::::::::GET THE NAME OF THE USER AND SAVE IN $inv:::::::::::::

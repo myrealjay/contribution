@@ -28,7 +28,7 @@
         @endif
 			<div class="form-group">
 				<label>Email</label>
-				<input type="email" name="email" value="{{ Auth::user()->email }}" class="form-control">
+				<input type="email"  readonly name="email" value="{{ Auth::user()->email }}" class="form-control">
 			</div>
       <div class="form-group">
         <label>Enter code here</label>
