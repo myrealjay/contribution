@@ -27,9 +27,13 @@
           </div>
         @endif
 			<div class="form-group">
-				<label>Enter code here</label>
-				<input type="text" name="token" class="form-control">
+				<label>Email</label>
+				<input type="email" name="email" value="{{ Auth::user()->email }}" class="form-control">
 			</div>
+      <div class="form-group">
+        <label>Enter code here</label>
+        <input type="text" name="token" class="form-control">
+      </div>
 			<input type="submit" name="chk" value="confirm" class="btn btn-primary">
 		</form>
 	</div>

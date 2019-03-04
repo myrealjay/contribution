@@ -35,6 +35,8 @@ Route::get('/AddMembers', 'AdminController@AddMembers');
 
 Route::post('/RegMember', 'AdminController@RegMember');
 
+Route::post('/view_members', 'AdminController@view_members');
+
 
 #Auth::routes();
 

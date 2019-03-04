@@ -7,6 +7,6 @@ use Illuminate\Database\Eloquent\Model;
 class Admin extends Model
 {
    protected $fillable = [
-        'Name', 'Amount', 'Members', 'creator',
+        'Name', 'Amount', 'Members', 'creator', 
     ];
 }
