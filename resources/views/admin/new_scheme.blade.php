@@ -26,7 +26,6 @@
 						</ul>
 					</div>
 					@endif
-
 					<div class="form-group">
 						<label>Enter Scheme Name</label>
 						<input type="text" name="Name" class="form-control">

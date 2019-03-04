@@ -63,7 +63,9 @@ class AdminController extends Controller
             'Amount'=>  'required',
             'Members'=>  'required'
         ]);
-        
+        $date = date('Y-m-d H:i:s', time());
+        $date = date('Y-m-d H:i:s', strtotime($date . " +48 hours"));
+    #    dd($date);
         Admin::create([
             'Name' => $request['Name'],
             'Amount' => $request['Amount'],
@@ -187,7 +189,7 @@ public function join(Request $request)
         'phone' => $request['phone'],
         'amount' => $request['amount'],
     ]);
-    Member::where('email', $email)->update([
+    Member::where('email', $request['email'])->update([
                 'active' => 1, 
             ]); 
     Session::flash('info','you have been sucessfully registered as an active member of '.$request["scheme"].' scheme');
