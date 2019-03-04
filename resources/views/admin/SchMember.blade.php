@@ -14,14 +14,24 @@
 						<th>Member</th>
 						<th>Email</th>
 						<th>Phone</th>
+						<th>Status</th>
 					</tr>
 					<tr>
 						@foreach($data as $row)
 						<td>{{ $row->name }}</td>
 						<td> {{ $row->email }} </td>
 						<td> {{ $row->phone }} </td>
+						<td>
+							<center>
+							@if($row->active == 1)
+							<img src="{{ asset('images/OK-512.png') }}" class="img img-responsive" width="20">
+							@else
+							<img src="{{ asset('images/Incorrect_Symbol-512.png') }}" class="img img-responsive" width="20">
+							@endif
+							</center>
+						</td>
 					</tr>
-{$row->phone}
+
 
 					@endforeach
 				</table>
