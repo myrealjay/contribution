@@ -109,9 +109,10 @@ class UserController extends Controller
 		{
 	#::::::::::::GET THE EMAIL FROM YOUR END::::::::::::::::::
 			$email = \Auth::user()->email;
-		#::::::::::::GET THE EMAIL FROM YOUR END::::::::::::::::::
+		#::::::::::::GETTING THE SCHEME I CREATED::::::::::::::::::
+			$my_scheme = Admin::where('creator', $email)->get();
 		$scheme = Member::where('email', $email)->get();
-		return response()->json(compact('scheme'),200);
+		return response()->json(compact('scheme'),compact('my_scheme'),200);
 	}
 
 	public function verifynow(Request $request)
@@ -200,6 +201,12 @@ class UserController extends Controller
 			Member::where('email', $email)->update([
 				'active' => 1, 
 			]); 
+
+			#::::UPDATE THE ADMIN TABLE TO SHOW THAT MEMBERS HAVE BEEN ADDED::::::
+    User::where('creator', $email)->update([
+                'mem_added' => 1, 
+            ]); 
+    
         #:::::::::::GET THE NAME OF THE USER AND SAVE IN $inv:::::::::::::
 			$inv = \Auth::user()->name;
          #:::::::::::GET THE NAME OF THE USER AND SAVE IN $inv:::::::::::::

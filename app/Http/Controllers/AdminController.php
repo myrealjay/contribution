@@ -78,6 +78,13 @@ class AdminController extends Controller
         return redirect('/AddMembers');
     }
 
+    public function add_mem(Request $request)
+    {
+        $name = $request['name'];
+        Session::put('Scheme', $name);
+        return redirect('/AddMembers');
+    }
+
     public function AddMembers()
     {
         $chk = Session::get('Scheme');
@@ -89,7 +96,8 @@ class AdminController extends Controller
     {
         $email = \Auth::user()->email;
         $Scheme = Member::where('email', $email)->get();
-        return view('admin.MyScheme', compact('Scheme'));
+        $my_scheme = Admin::where('creator', $email)->get();
+        return view('admin.MyScheme', compact('Scheme'), compact('my_scheme'));
     }
 
     public function view_members(Request $request)
@@ -168,6 +176,11 @@ public function RegMember(Request $request)
     #::::THE SCHEME CREATOR SHOULD BE AN ACTIVE MEMBER::::::
     Member::where('email', $email)->update([
                 'active' => 1, 
+            ]); 
+
+    #::::UPDATE THE ADMIN TABLE TO SHOW THAT MEMBERS HAVE BEEN ADDED::::::
+    User::where('creator', $email)->update([
+                'mem_added' => 1, 
             ]); 
 
     $inv = \Auth::user()->name;

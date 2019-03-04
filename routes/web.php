@@ -43,6 +43,8 @@ Route::post('/chk_scheme', 'AdminController@chk_scheme');
 
 Route::post('/join', 'AdminController@join');
 
+Route::post('/add_mem', 'AdminController@add_mem');
+
 Route::post('/view_members', 'AdminController@view_members');
 
 
