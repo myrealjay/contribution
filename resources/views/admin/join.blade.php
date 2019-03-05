@@ -31,6 +31,15 @@
 				</table>
 			</div>
 		</div>
+		<!--:::CHECKING IF THE TIMELAPSE HAVE NOT EXPIRES:::-->
+		@php
+			$datetime1 = $row->expire; 
+			$datetime2 =  date('Y-m-d H:i:s', time());
+		//	$datetime2 = '2019-03-06 17:15:04';
+			
+			 $diff = strtotime($datetime1) - strtotime($datetime2);
+
+		@endphp
 		<form method="post" action="{{ url('/join') }}">
 			{{csrf_field()}}
 			<input type="hidden" name="scheme" value="{{ Session::get('scheme') }}">
@@ -38,7 +47,13 @@
 			<input type="hidden" name="email" value="{{ \Auth::user()->email }}">
 			<input type="hidden" name="phone" value="{{ Auth::user()->phone }}">
 			<input type="hidden" name="amount" value="{{ $row->amount }}">
+			@if($diff > 0)
 			<input type="submit" name="submit" value="Join Scheme now" class="btn btn-primary">
+			@else
+			<div class="alert alert-danger">
+			{{ 'Timeline expired, You can no longer join the scheme' }}
+		</div>
+			@endif
 		</form>
 
 
