@@ -49,7 +49,7 @@ class UserController extends Controller
 		if($validator->fails()){
 			return response()->json($validator->errors()->toJson(), 200);
 		}
-	
+		
 		$a = mt_rand(100000,999999);
 		Cache::put('myCache', $a, 10);
 		$x = Cache::get('myCache');
@@ -102,15 +102,15 @@ class UserController extends Controller
 			'active' => 1,
 		]);
 
-			return response()->json(compact('data'),200);
-		}
+		return response()->json(compact('data'),200);
+	}
 
-		public function MyScheme()
-		{
+	public function MyScheme()
+	{
 	#::::::::::::GET THE EMAIL FROM YOUR END::::::::::::::::::
-			$email = \Auth::user()->email;
+		$email = \Auth::user()->email;
 		#::::::::::::GETTING THE SCHEME I CREATED::::::::::::::::::
-			$my_scheme = Admin::where('creator', $email)->get();
+		$my_scheme = Admin::where('creator', $email)->get();
 		$scheme = Member::where('email', $email)->get();
 		return response()->json(compact('scheme'),compact('my_scheme'),200);
 	}
@@ -125,17 +125,17 @@ class UserController extends Controller
 		if($validator->fails()){
 			return response()->json($validator->errors()->toJson(), 200);
 		}
-       $x = Cache::get('myCache');
+		$x = Cache::get('myCache');
 
-       if ($request->token == $x) {
-		   User::where('id',\Auth::user()->id)->update([
-			"confirm"=>2
-		   ]);
-            return response()->json(['message'=>'successful'],200);
-        }
-        else{
-            return response()->json(['incorrect token'], 200);
-        }
+		if ($request->token == $x) {
+			User::where('id',\Auth::user()->id)->update([
+				"confirm"=>2
+			]);
+			return response()->json(['message'=>'successful'],200);
+		}
+		else{
+			return response()->json(['incorrect token'], 200);
+		}
 		
 	}
 
@@ -165,58 +165,65 @@ class UserController extends Controller
 
 	}
 
-		public function RegMember(Request $request)
-		{
-			$validator = Validator::make($request->all(), [
-				'Name'=>  'required',
-				'email'=>  'required',
-				'phone'=>  'required'
-			]);
+	public function RegMember(Request $request)
+	{
+		$validator = Validator::make($request->all(), [
+			'Name'=>  'required',
+			'email'=>  'required',
+			'phone'=>  'required'
+		]);
 
-			if($validator->fails()){
-				return response()->json($validator->errors()->toJson(), 200);
-			}
-			for ($i=0; $i < count($email); $i++) { 
-				Member::create([
-					'name' => $name[$i],
-					'email' => $email[$i],
-					'phone' => $phone[$i],
-					'scheme' => $request['Scheme'],
-					'amount' => $request['amount'],
-				]);
-			}
-		#:::::COLLECT THE BELOW DATA::::::
-			$name = \Auth::user()->name;
-			$email = \Auth::user()->email;
-			$phone = \Auth::user()->phone;
-    #:::::HERE THE SCHEME CREATOR IS THE FIRST ACTIVE MEMBER OF THE SCHEME::::::::
-			Scheme_member::create([
+		if($validator->fails()){
+			return response()->json($validator->errors()->toJson(), 200);
+		}
+			#::::EXPIRE DATE:::::
+		$x = date('Y-m-d H:i:s', time());
+		$date = date('Y-m-d H:i:s', strtotime($x . " +48 hours"));
+		for ($i=0; $i < count($email); $i++) { 
+			Member::create([
+				'name' => $name[$i],
+				'email' => $email[$i],
+				'phone' => $phone[$i],
 				'scheme' => $request['Scheme'],
-				'name' => $name,
-				'email' => $email,
-				'phone' => $phone,
 				'amount' => $request['amount'],
+				'expire' => $date,
 			]);
+		}
+			#:::GETTING THE DATE FIRST MEMBER WILL BE PAID:::::
+		$PayDate = date('Y-m-d H:i:s', strtotime($x . " +672 hours"));
+		#:::::COLLECT THE BELOW DATA::::::
+		$name = \Auth::user()->name;
+		$email = \Auth::user()->email;
+		$phone = \Auth::user()->phone;
+    #:::::HERE THE SCHEME CREATOR IS THE FIRST ACTIVE MEMBER OF THE SCHEME::::::::
+		Scheme_member::create([
+			'scheme' => $request['Scheme'],
+			'name' => $name,
+			'email' => $email,
+			'phone' => $phone,
+			'payday' => $PayDate,
+			'amount' => $request['amount'],
+		]);
     #::::THE SCHEME CREATOR SHOULD BE AN ACTIVE MEMBER::::::
-			Member::where('email', $email)->update([
-				'active' => 1, 
-			]); 
+		Member::where('email', $email)->update([
+			'active' => 1, 
+		]); 
 
 			#::::UPDATE THE ADMIN TABLE TO SHOW THAT MEMBERS HAVE BEEN ADDED::::::
-    User::where('creator', $email)->update([
-                'mem_added' => 1, 
-            ]); 
-    
+		Admin::where('creator', $email)->update([
+			'mem_added' => 1, 
+		]); 
+		
         #:::::::::::GET THE NAME OF THE USER AND SAVE IN $inv:::::::::::::
-			$inv = \Auth::user()->name;
+		$inv = \Auth::user()->name;
          #:::::::::::GET THE NAME OF THE USER AND SAVE IN $inv:::::::::::::
 
         #::::::::::SENDING MAIL TO EACH SCHEME MEMBERS::::::::::::::
-			$message = 'by '.$inv.'. the group will be contriuting NGN'.$request['amount'].' per week which will be disbussed to selected members every week in a round robin format. Login using the link below in order to join new members of the scheme';
-			Mail::to($request['email'])->send(new Members_mail($message));
+		$message = 'by '.$inv.'. the group will be contriuting NGN'.$request['amount'].' per week which will be disbussed to selected members every week in a round robin format. Login using the link below in order to join new members of the scheme';
+		Mail::to($request['email'])->send(new Members_mail($message));
 
-			return response()->json(compact($request->all()),200);
-		}
-
-
+		return response()->json(compact($request->all()),200);
 	}
+
+
+}

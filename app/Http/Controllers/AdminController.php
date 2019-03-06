@@ -153,7 +153,6 @@ public function RegMember(Request $request)
     #::::EXPIRE DATE:::::
     $x = date('Y-m-d H:i:s', time());
     $date = date('Y-m-d H:i:s', strtotime($x . " +48 hours"));
-#    dd($date);
     for ($i=0; $i < count($email); $i++) { 
         Member::create([
             'name' => $name[$i],
@@ -164,6 +163,8 @@ public function RegMember(Request $request)
             'expire' => $date,
         ]);
     }
+    #:::GETTING THE DATE FIRST MEMBER WILL BE PAID:::::
+    $PayDate = date('Y-m-d H:i:s', strtotime($x . " +672 hours"));
     #:::::COLLECT THE BELOW DATA::::::
     $name = \Auth::user()->name;
     $email = \Auth::user()->email;
@@ -174,6 +175,7 @@ public function RegMember(Request $request)
         'name' => $name,
         'email' => $email,
         'phone' => $phone,
+        'payday' => $PayDate,
         'amount' => $request['amount'],
     ]);
     #::::THE SCHEME CREATOR SHOULD BE AN ACTIVE MEMBER::::::
