@@ -7,7 +7,11 @@
 		@if(Auth::user()->confirm != 2)
 		<meta http-equiv="refresh" content="0;URL=confirm" />
 		@endif
-
+		<!--::GETTING AND SETTING NEW PAY DATE::-->
+		@php
+		$x = $day->payday;
+		$date = date('Y-m-d H:i:s', strtotime($x . " +168 hours"));
+		@endphp
 		<div class="panel panel-default">
 			<div class="panel-heading">
 				<h5>Scheme Name: <b>{{ Session::get('scheme') }}</b></h5>
@@ -33,11 +37,11 @@
 		</div>
 		<!--:::CHECKING IF THE TIMELAPSE HAVE NOT EXPIRES:::-->
 		@php
-			$datetime1 = $row->expire; 
-			$datetime2 =  date('Y-m-d H:i:s', time());
+		$datetime1 = $row->expire; 
+		$datetime2 =  date('Y-m-d H:i:s', time());
 		//	$datetime2 = '2019-03-06 17:15:04';
-			
-			 $diff = strtotime($datetime1) - strtotime($datetime2);
+
+		$diff = strtotime($datetime1) - strtotime($datetime2);
 
 		@endphp
 		<form method="post" action="{{ url('/join') }}">
@@ -47,12 +51,13 @@
 			<input type="hidden" name="email" value="{{ \Auth::user()->email }}">
 			<input type="hidden" name="phone" value="{{ Auth::user()->phone }}">
 			<input type="hidden" name="amount" value="{{ $row->amount }}">
+			<input type="hidden" name="payday" value="{{ $date }}">
 			@if($diff > 0)
 			<input type="submit" name="submit" value="Join Scheme now" class="btn btn-primary">
 			@else
 			<div class="alert alert-danger">
-			{{ 'Timeline expired, You can no longer join the scheme' }}
-		</div>
+				{{ 'Timeline expired, You can no longer join the scheme' }}
+			</div>
 			@endif
 		</form>
 

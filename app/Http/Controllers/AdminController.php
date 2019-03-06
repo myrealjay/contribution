@@ -122,13 +122,18 @@ class AdminController extends Controller
             $chk = Scheme_member::where('scheme', $scheme)
             ->where('email', $email)->get();
             if (!$chk->isEmpty()) {
-               Session::flash('not_found','you are already a member of this scheme');
-               return redirect('/home');
-           }
-           else{
+             Session::flash('not_found','you are already a member of this scheme');
+             return redirect('/home');
+         }
+         else{
+            #::::::GETTING THE PAY DATE OF THE LAST PERSON ON THE LIST::::::
+            $day = Scheme_member::where('scheme', $scheme)
+            ->orderBy('id', 'desc')->first();
+        #    dd($day->payday);
+
             Session::put('scheme', $scheme);
             $data = Member::where('scheme', $scheme)->get();
-            return view('admin.join', compact('data'));
+            return view('admin.join', compact('data'), compact('day'));
         }
     } 
     else 
@@ -153,6 +158,8 @@ public function RegMember(Request $request)
     #::::EXPIRE DATE:::::
     $x = date('Y-m-d H:i:s', time());
     $date = date('Y-m-d H:i:s', strtotime($x . " +48 hours"));
+    #:::::CREATOR'S EMAIL:::::
+    $creator = \Auth::user()->email;
     for ($i=0; $i < count($email); $i++) { 
         Member::create([
             'name' => $name[$i],
@@ -161,6 +168,7 @@ public function RegMember(Request $request)
             'scheme' => $request['Scheme'],
             'amount' => $request['amount'],
             'expire' => $date,
+            'creator' => $creator,
         ]);
     }
     #:::GETTING THE DATE FIRST MEMBER WILL BE PAID:::::
@@ -206,6 +214,7 @@ public function join(Request $request)
         'email' => $request['email'],
         'phone' => $request['phone'],
         'amount' => $request['amount'],
+        'payday' => $request['payday'],
     ]);
     Member::where('email', $request['email'])->update([
         'active' => 1, 

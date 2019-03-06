@@ -43,7 +43,6 @@
 					@endforeach
 				</table>
 				<!--:::::THE SCHEME I CREATED::::::-->
-
 				<p>&nbsp;</p>
 				<table class="table table-bordered">
 					<tr>
@@ -55,8 +54,13 @@
 						<th></th>
 					</tr>
 					<tr>
-
 						@foreach($Scheme as $row)
+
+						
+						@if( Auth::User()->email == $row->creator )
+						
+						@else
+						
 						<td>{{ $row->scheme }}</td>
 						<td>NGN {{ $row->amount }} </td>
 						<td>
@@ -67,6 +71,7 @@
 							</form>
 						</td>
 					</tr>
+					@endif
 
 					@endforeach
 				</table>

@@ -49,7 +49,7 @@ class UserController extends Controller
 		if($validator->fails()){
 			return response()->json($validator->errors()->toJson(), 200);
 		}
-		
+
 		$a = mt_rand(100000,999999);
 		Cache::put('myCache', $a, 10);
 		$x = Cache::get('myCache');
@@ -97,6 +97,7 @@ class UserController extends Controller
 			'email' => $request['email'],
 			'phone' => $request['phone'],
 			'amount' => $request['amount'],
+			'payday' => $request['payday'],
 		]);
 		Member::where('email', $email)->update([
 			'active' => 1,
@@ -213,7 +214,7 @@ class UserController extends Controller
 		Admin::where('creator', $email)->update([
 			'mem_added' => 1, 
 		]); 
-		
+
         #:::::::::::GET THE NAME OF THE USER AND SAVE IN $inv:::::::::::::
 		$inv = \Auth::user()->name;
          #:::::::::::GET THE NAME OF THE USER AND SAVE IN $inv:::::::::::::
