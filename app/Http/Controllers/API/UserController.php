@@ -112,7 +112,7 @@ class UserController extends Controller
 		#::::::::::::GETTING THE SCHEME I CREATED::::::::::::::::::
 			$my_scheme = Admin::where('creator', $email)->get();
 		$scheme = Member::where('email', $email)->get();
-		return response()->json(compact('scheme'),compact('my_scheme'),200);
+		return response()->json(compact('my_scheme','scheme'),200);
 	}
 
 	public function verifynow(Request $request)
@@ -168,10 +168,14 @@ class UserController extends Controller
 		public function RegMember(Request $request)
 		{
 			$validator = Validator::make($request->all(), [
-				'Name'=>  'required',
+				'name'=>  'required',
 				'email'=>  'required',
 				'phone'=>  'required'
 			]);
+
+			$email=$request->email;
+			$phone=$request->phone;
+			$name=$request->name;
 
 			if($validator->fails()){
 				return response()->json($validator->errors()->toJson(), 200);
@@ -181,7 +185,7 @@ class UserController extends Controller
 					'name' => $name[$i],
 					'email' => $email[$i],
 					'phone' => $phone[$i],
-					'scheme' => $request['Scheme'],
+					'scheme' => $request['scheme'],
 					'amount' => $request['amount'],
 				]);
 			}
@@ -189,9 +193,17 @@ class UserController extends Controller
 			$name = \Auth::user()->name;
 			$email = \Auth::user()->email;
 			$phone = \Auth::user()->phone;
+
+			Member::create([
+				'name' => $name,
+				'email' => $email,
+				'phone' => $phone,
+				'scheme' => $request['scheme'],
+				'amount' => $request['amount'],
+			]);
     #:::::HERE THE SCHEME CREATOR IS THE FIRST ACTIVE MEMBER OF THE SCHEME::::::::
 			Scheme_member::create([
-				'scheme' => $request['Scheme'],
+				'scheme' => $request['scheme'],
 				'name' => $name,
 				'email' => $email,
 				'phone' => $phone,
@@ -212,10 +224,10 @@ class UserController extends Controller
          #:::::::::::GET THE NAME OF THE USER AND SAVE IN $inv:::::::::::::
 
         #::::::::::SENDING MAIL TO EACH SCHEME MEMBERS::::::::::::::
-			$message = 'by '.$inv.'. the group will be contriuting NGN'.$request['amount'].' per week which will be disbussed to selected members every week in a round robin format. Login using the link below in order to join new members of the scheme';
-			Mail::to($request['email'])->send(new Members_mail($message));
+			/*$message = 'by '.$inv.'. the group will be contriuting NGN'.$request['amount'].' per week which will be disbussed to selected members every week in a round robin format. Login using the link below in order to join new members of the scheme';
+			Mail::to($request['email'])->send(new Members_mail($message));*/
 
-			return response()->json(compact($request->all()),200);
+			return response()->json($request->all(),200);
 		}
 
 
