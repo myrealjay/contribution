@@ -91,6 +91,7 @@ class UserController extends Controller
 
 	public function join(Request $request)
 	{
+		
 		$data = Scheme_member::create([
 			'scheme' => $request['scheme'],
 			'name' => $request['name'],
@@ -98,15 +99,16 @@ class UserController extends Controller
 			'phone' => $request['phone'],
 			'amount' => $request['amount'],
 		]);
-		Member::where('email', $email)->update([
+		$email=$request['email'];
+		Member::where('email', $email)->where('scheme',$request['scheme'])->update([
 			'active' => 1,
 		]);
 
-			return response()->json(compact('data'),200);
+			return response()->json(['message'=>'successfully joined'],200);
 		}
 
-		public function MyScheme()
-		{
+	public function MyScheme()
+	{
 	#::::::::::::GET THE EMAIL FROM YOUR END::::::::::::::::::
 			$email = \Auth::user()->email;
 		#::::::::::::GETTING THE SCHEME I CREATED::::::::::::::::::
@@ -180,6 +182,10 @@ class UserController extends Controller
 			if($validator->fails()){
 				return response()->json($validator->errors()->toJson(), 200);
 			}
+
+			$x = date('Y-m-d H:i:s', time());
+			$date = date('Y-m-d H:i:s', strtotime($x . " +48 hours"));
+			
 			for ($i=0; $i < count($email); $i++) { 
 				Member::create([
 					'name' => $name[$i],
@@ -187,6 +193,7 @@ class UserController extends Controller
 					'phone' => $phone[$i],
 					'scheme' => $request['scheme'],
 					'amount' => $request['amount'],
+					'expire' => $date,
 				]);
 			}
 		#:::::COLLECT THE BELOW DATA::::::
@@ -200,6 +207,7 @@ class UserController extends Controller
 				'phone' => $phone,
 				'scheme' => $request['scheme'],
 				'amount' => $request['amount'],
+				'expire' => $date,
 			]);
     #:::::HERE THE SCHEME CREATOR IS THE FIRST ACTIVE MEMBER OF THE SCHEME::::::::
 			Scheme_member::create([
@@ -215,7 +223,7 @@ class UserController extends Controller
 			]); 
 
 			#::::UPDATE THE ADMIN TABLE TO SHOW THAT MEMBERS HAVE BEEN ADDED::::::
-    User::where('creator', $email)->update([
+			Admin::where('creator', $email)->update([
                 'mem_added' => 1, 
             ]); 
     
@@ -227,7 +235,22 @@ class UserController extends Controller
 			/*$message = 'by '.$inv.'. the group will be contriuting NGN'.$request['amount'].' per week which will be disbussed to selected members every week in a round robin format. Login using the link below in order to join new members of the scheme';
 			Mail::to($request['email'])->send(new Members_mail($message));*/
 
-			return response()->json($request->all(),200);
+			return response()->json(['message'=>'members added successfully'],200);
+		}
+
+
+		public function getSchemeMembers($scheme){
+			$members=Member::where('scheme',$scheme)->get();
+			return response()->json(compact('members'));
+		}
+
+		public function checkJoined($scheme){
+			$user=\Auth::user();
+			$member=Member::where([['scheme',"=",$scheme],["email","=",$user->email]])->get()->first();
+			if($member){
+				return response()->json(["message"=>$member->active]);
+			}
+			return response()->json(['error'=>"member not found"]);
 		}
 
 

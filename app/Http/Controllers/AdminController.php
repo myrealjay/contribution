@@ -63,9 +63,7 @@ class AdminController extends Controller
             'Amount'=>  'required',
             'Members'=>  'required'
         ]);
-        $date = date('Y-m-d H:i:s', time());
-        $date = date('Y-m-d H:i:s', strtotime($date . " +48 hours"));
-    #    dd($date);
+
         Admin::create([
             'Name' => $request['Name'],
             'Amount' => $request['Amount'],
@@ -152,6 +150,10 @@ public function RegMember(Request $request)
     $phone = $request['phone'];
     $name = $request['name'];
 
+    #::::EXPIRE DATE:::::
+    $x = date('Y-m-d H:i:s', time());
+    $date = date('Y-m-d H:i:s', strtotime($x . " +48 hours"));
+#    dd($date);
     for ($i=0; $i < count($email); $i++) { 
         Member::create([
             'name' => $name[$i],
@@ -159,6 +161,7 @@ public function RegMember(Request $request)
             'phone' => $phone[$i],
             'scheme' => $request['Scheme'],
             'amount' => $request['amount'],
+            'expire' => $date,
         ]);
     }
     #:::::COLLECT THE BELOW DATA::::::
@@ -175,13 +178,13 @@ public function RegMember(Request $request)
     ]);
     #::::THE SCHEME CREATOR SHOULD BE AN ACTIVE MEMBER::::::
     Member::where('email', $email)->update([
-                'active' => 1, 
-            ]); 
+        'active' => 1, 
+    ]); 
 
     #::::UPDATE THE ADMIN TABLE TO SHOW THAT MEMBERS HAVE BEEN ADDED::::::
-    User::where('creator', $email)->update([
-                'mem_added' => 1, 
-            ]); 
+    Admin::where('creator', $email)->update([
+        'mem_added' => 1, 
+    ]); 
 
     $inv = \Auth::user()->name;
 
@@ -203,8 +206,8 @@ public function join(Request $request)
         'amount' => $request['amount'],
     ]);
     Member::where('email', $request['email'])->update([
-                'active' => 1, 
-            ]); 
+        'active' => 1, 
+    ]); 
     Session::flash('info','you have been sucessfully registered as an active member of '.$request["scheme"].' scheme');
     return redirect('/home');
 }
