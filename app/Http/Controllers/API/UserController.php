@@ -96,7 +96,7 @@ class UserController extends Controller
 	public function join(Request $request)
 	{
 		$date;
-		$member=DB::table('scheme_members')->orderBy('id', 'desc')->first();
+		$member=DB::table('scheme_members')->orderBy('id', 'desc')->where('scheme',$request['scheme'])->first();
 		$x = $member->payday;
 		$date = date('Y-m-d H:i:s', strtotime($x . " +168 hours"));
 		
