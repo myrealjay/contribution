@@ -121,7 +121,7 @@ class UserController extends Controller
 		$email = \Auth::user()->email;
 		#::::::::::::GETTING THE SCHEME I CREATED::::::::::::::::::
 		$my_scheme = Admin::where('creator', $email)->get();
-		$scheme = Member::where('email', $email)->get();
+		$scheme = Member::where([['email',"=", $email],['creator','!=',$email]])->get();
 		return response()->json(compact('my_scheme','scheme'),200);
 	}
 
