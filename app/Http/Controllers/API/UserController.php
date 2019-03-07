@@ -15,6 +15,7 @@ use JWTAuth;
 use Tymon\JWTAuth\Exceptions\JWTException;
 use Illuminate\Support\Facades\Mail;
 use App\Mail\SendMailable;
+use DB;
 
 class UserController extends Controller
 {
@@ -49,7 +50,7 @@ class UserController extends Controller
 		if($validator->fails()){
 			return response()->json($validator->errors()->toJson(), 200);
 		}
-	
+
 		$a = mt_rand(100000,999999);
 		Cache::put('myCache', $a, 10);
 		$x = Cache::get('myCache');
@@ -79,6 +80,9 @@ class UserController extends Controller
 		if($validator->fails()){
 			return response()->json($validator->errors()->toJson(), 200);
 		}
+		if($request['Members']<5){
+			return response()->json(['error'=>'This scheme can take a minimum of 5 members'], 200);
+		}
 		$data = Admin::create([
 			'Name' => $request['Name'],
 			'Amount' => $request['Amount'],
@@ -91,6 +95,9 @@ class UserController extends Controller
 
 	public function join(Request $request)
 	{
+		$member=DB::table('scheme_members')->orderBy('id', 'desc')->first();
+		$x = $member->payday;
+		$date = date('Y-m-d H:i:s', strtotime($x . " +168 hours"));
 		
 		$data = Scheme_member::create([
 			'scheme' => $request['scheme'],
@@ -98,6 +105,7 @@ class UserController extends Controller
 			'email' => $request['email'],
 			'phone' => $request['phone'],
 			'amount' => $request['amount'],
+			'payday' => $date,
 		]);
 		$email=$request['email'];
 		Member::where('email', $email)->where('scheme',$request['scheme'])->update([
@@ -110,9 +118,9 @@ class UserController extends Controller
 	public function MyScheme()
 	{
 	#::::::::::::GET THE EMAIL FROM YOUR END::::::::::::::::::
-			$email = \Auth::user()->email;
+		$email = \Auth::user()->email;
 		#::::::::::::GETTING THE SCHEME I CREATED::::::::::::::::::
-			$my_scheme = Admin::where('creator', $email)->get();
+		$my_scheme = Admin::where('creator', $email)->get();
 		$scheme = Member::where('email', $email)->get();
 		return response()->json(compact('my_scheme','scheme'),200);
 	}
@@ -127,17 +135,17 @@ class UserController extends Controller
 		if($validator->fails()){
 			return response()->json($validator->errors()->toJson(), 200);
 		}
-       $x = Cache::get('myCache');
+		$x = Cache::get('myCache');
 
-       if ($request->token == $x) {
-		   User::where('id',\Auth::user()->id)->update([
-			"confirm"=>2
-		   ]);
-            return response()->json(['message'=>'successful'],200);
-        }
-        else{
-            return response()->json(['incorrect token'], 200);
-        }
+		if ($request->token == $x) {
+			User::where('id',\Auth::user()->id)->update([
+				"confirm"=>2
+			]);
+			return response()->json(['message'=>'successful'],200);
+		}
+		else{
+			return response()->json(['incorrect token'], 200);
+		}
 		
 	}
 
@@ -178,6 +186,7 @@ class UserController extends Controller
 			$email=$request->email;
 			$phone=$request->phone;
 			$name=$request->name;
+			$useremail = \Auth::user()->email;
 
 			if($validator->fails()){
 				return response()->json($validator->errors()->toJson(), 200);
@@ -194,12 +203,14 @@ class UserController extends Controller
 					'scheme' => $request['scheme'],
 					'amount' => $request['amount'],
 					'expire' => $date,
+					'creator' => $useremail,
 				]);
 			}
 		#:::::COLLECT THE BELOW DATA::::::
 			$name = \Auth::user()->name;
 			$email = \Auth::user()->email;
 			$phone = \Auth::user()->phone;
+			$PayDate = date('Y-m-d H:i:s', strtotime($x . " +672 hours"));
 
 			Member::create([
 				'name' => $name,
@@ -208,6 +219,7 @@ class UserController extends Controller
 				'scheme' => $request['scheme'],
 				'amount' => $request['amount'],
 				'expire' => $date,
+				'creator' => $useremail,
 			]);
     #:::::HERE THE SCHEME CREATOR IS THE FIRST ACTIVE MEMBER OF THE SCHEME::::::::
 			Scheme_member::create([
@@ -216,19 +228,23 @@ class UserController extends Controller
 				'email' => $email,
 				'phone' => $phone,
 				'amount' => $request['amount'],
+				'expire' => $date,
+				'payday' => $PayDate,
 			]);
+	
+	
     #::::THE SCHEME CREATOR SHOULD BE AN ACTIVE MEMBER::::::
-			Member::where('email', $email)->update([
-				'active' => 1, 
-			]); 
+		Member::where('email', $email)->where('scheme',$request['scheme'])->update([
+			'active' => 1, 
+		]); 
 
 			#::::UPDATE THE ADMIN TABLE TO SHOW THAT MEMBERS HAVE BEEN ADDED::::::
-			Admin::where('creator', $email)->update([
+			Admin::where('creator', $email)->where('Name',$request['scheme'])->update([
                 'mem_added' => 1, 
             ]); 
     
         #:::::::::::GET THE NAME OF THE USER AND SAVE IN $inv:::::::::::::
-			$inv = \Auth::user()->name;
+		$inv = \Auth::user()->name;
          #:::::::::::GET THE NAME OF THE USER AND SAVE IN $inv:::::::::::::
 
         #::::::::::SENDING MAIL TO EACH SCHEME MEMBERS::::::::::::::
@@ -254,4 +270,4 @@ class UserController extends Controller
 		}
 
 
-	}
+}
