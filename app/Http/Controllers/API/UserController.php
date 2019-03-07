@@ -95,6 +95,7 @@ class UserController extends Controller
 
 	public function join(Request $request)
 	{
+		$date;
 		$member=DB::table('scheme_members')->orderBy('id', 'desc')->first();
 		$x = $member->payday;
 		$date = date('Y-m-d H:i:s', strtotime($x . " +168 hours"));
@@ -112,8 +113,8 @@ class UserController extends Controller
 			'active' => 1,
 		]);
 
-			return response()->json(['message'=>'successfully joined'],200);
-		}
+		return response()->json(['message'=>'successfully joined'],200);
+	}
 
 	public function MyScheme()
 	{
@@ -267,6 +268,11 @@ class UserController extends Controller
 				return response()->json(["message"=>$member->active]);
 			}
 			return response()->json(['error'=>"member not found"]);
+		}
+
+		public function getActiveMembers($scheme){
+			$members=Scheme_member::where('scheme',$scheme)->get();
+			return response()->json(compact('members'));
 		}
 
 

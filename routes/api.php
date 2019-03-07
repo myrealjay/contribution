@@ -36,6 +36,7 @@ Route::group(['middleware' => ['jwt.verify']], function() {
 	Route::get('/MyScheme', 'UserController@MyScheme');
 	Route::get('/schemeMembers/{scheme}', 'UserController@getSchemeMembers');
 	Route::get('/checkJoined/{scheme}', 'UserController@checkJoined');
+	Route::get('/activeMembers/{scheme}', 'UserController@getActiveMembers');
 
 	Route::post('RegMember', 'UserController@RegMember');
 
