@@ -187,7 +187,9 @@ public function RegMember(Request $request)
         'amount' => $request['amount'],
     ]);
     #::::THE SCHEME CREATOR SHOULD BE AN ACTIVE MEMBER::::::
-    Member::where('email', $email)->update([
+    Member::where('email', $email)
+    ->where('scheme', $request['scheme'])
+    ->update([
         'active' => 1, 
     ]); 
 
@@ -216,7 +218,9 @@ public function join(Request $request)
         'amount' => $request['amount'],
         'payday' => $request['payday'],
     ]);
-    Member::where('email', $request['email'])->update([
+    Member::where('email', $request['email'])
+    ->where('scheme', $request['scheme'])
+    ->update([
         'active' => 1, 
     ]); 
     Session::flash('info','you have been sucessfully registered as an active member of '.$request["scheme"].' scheme');

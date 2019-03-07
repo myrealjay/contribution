@@ -99,7 +99,9 @@ class UserController extends Controller
 			'amount' => $request['amount'],
 			'payday' => $request['payday'],
 		]);
-		Member::where('email', $email)->update([
+		Member::where('email', $email)
+		->where('scheme', $request['scheme'])
+		->update([
 			'active' => 1,
 		]);
 
@@ -206,7 +208,9 @@ class UserController extends Controller
 			'amount' => $request['amount'],
 		]);
     #::::THE SCHEME CREATOR SHOULD BE AN ACTIVE MEMBER::::::
-		Member::where('email', $email)->update([
+		Member::where('email', $email)
+		->where('scheme', $request['scheme'])
+		->update([
 			'active' => 1, 
 		]); 
 
