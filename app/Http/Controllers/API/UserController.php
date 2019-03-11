@@ -177,7 +177,9 @@ class UserController extends Controller
 
 	}
 
-	public function getPayDays($num){
+	public function getPayDays($num,Request $request){
+		$scheme=$request->scheme;
+
 		$num_of_members=$num;
 		$x = date('Y-m-d H:i:s', time());
 		$PayDate = date('Y-m-d H:i:s', strtotime($x . " +672 hours"));
@@ -189,7 +191,12 @@ class UserController extends Controller
 		
 		for($i=0;$i<$num_of_members-1;$i++){
 			$date = date('Y-m-d H:i:s', strtotime($x . " +168 hours"));
-			array_push($paydays,$date);
+			$date2=date('Y-m-d', strtotime($x . " +168 hours"));
+			$scheme_member=Scheme_member::whereDate('payday', '=', $date2)->first();
+			if(!$scheme_member){
+				array_push($paydays,$date);
+			}
+			
 			$x=$date;
 		}
 
