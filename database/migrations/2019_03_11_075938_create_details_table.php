@@ -18,6 +18,7 @@ class CreateDetailsTable extends Migration
             $table->integer('scheme_member_id')->unsigned();
             $table->string('scheme');
             $table->double('amount');
+            $table->integer('week');
             $table->timestamps();
         });
     }

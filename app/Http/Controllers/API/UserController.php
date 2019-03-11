@@ -16,6 +16,7 @@ use Tymon\JWTAuth\Exceptions\JWTException;
 use Illuminate\Support\Facades\Mail;
 use App\Mail\SendMailable;
 use DB;
+use App\Detail;
 
 class UserController extends Controller
 {
@@ -276,7 +277,20 @@ class UserController extends Controller
 		}
 		public function pay($id,Request $request)
 		{
+			$input=$request->all();
+			//check for the week the person is paying
+			$week=count(Detail::where('scheme_member_id',$request->scheme_member_id)->get())+1;
+			$input['week']=$week;
+			$payment=Detail::create($input);
 			
+			if($payment){
+				return response()->json(compact('payment'));
+			}
+			return response()->json(['error'=>'Payment was not successful']);
+		}
+		public function getPayment($scheme){
+			$payment=Detail::where('scheme',$scheme)->get();
+			return response()->json(compact('payment'));
 		}
 
 
