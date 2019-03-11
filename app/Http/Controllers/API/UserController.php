@@ -275,21 +275,37 @@ class UserController extends Controller
 			$members=Scheme_member::where('scheme',$scheme)->get();
 			return response()->json(compact('members'));
 		}
-		public function pay($id,Request $request)
+
+		public function pay(Request $request)
 		{
-			$input=$request->all();
+			$input=$request->except('authcode');
 			//check for the week the person is paying
 			$week=count(Detail::where('scheme_member_id',$request->scheme_member_id)->get())+1;
 			$input['week']=$week;
 			$payment=Detail::create($input);
-			
+
+			$authcode=$request->authcode;
+
+			$user=\Auth::user();
+			$user->update([
+				'authorization_token'=>$authcode
+			]);
 			if($payment){
 				return response()->json(compact('payment'));
 			}
 			return response()->json(['error'=>'Payment was not successful']);
 		}
+
 		public function getPayment($scheme){
-			$payment=Detail::where('scheme',$scheme)->get();
+			$payments=DB::table('details')->orderBy('week')->where('scheme',$scheme)->get();
+			$payment=[];
+			foreach($payments as $pay){
+				$member=Scheme_member::where('id',$pay->scheme_member_id)->first();
+				$data=[];
+				array_push($data,$pay);
+				array_push($data,$member);
+				array_push($payment,$data);
+			}
 			return response()->json(compact('payment'));
 		}
 
