@@ -98,8 +98,8 @@ class UserController extends Controller
 	{
 		$date;
 		$member=DB::table('scheme_members')->orderBy('id', 'desc')->where('scheme',$request['scheme'])->first();
-		$x = $member->payday;
-		$date = date('Y-m-d H:i:s', strtotime($x . " +168 hours"));
+		//$x = $member->payday;
+		$date =$request->payday; //date('Y-m-d H:i:s', strtotime($x . " +168 hours"));
 		
 		$data = Scheme_member::create([
 			'scheme' => $request['scheme'],
@@ -177,6 +177,25 @@ class UserController extends Controller
 
 	}
 
+	public function getPayDays($num){
+		$num_of_members=$num;
+		$x = date('Y-m-d H:i:s', time());
+		$PayDate = date('Y-m-d H:i:s', strtotime($x . " +672 hours"));
+		$paydays=[];
+
+		array_push($paydays,$PayDate);
+
+		$x=$PayDate;
+		
+		for($i=0;$i<$num_of_members-1;$i++){
+			$date = date('Y-m-d H:i:s', strtotime($x . " +168 hours"));
+			array_push($paydays,$date);
+			$x=$date;
+		}
+
+		return response()->json(compact('paydays'));
+	}
+
 		public function RegMember(Request $request)
 		{
 			$validator = Validator::make($request->all(), [
@@ -212,7 +231,8 @@ class UserController extends Controller
 			$name = \Auth::user()->name;
 			$email = \Auth::user()->email;
 			$phone = \Auth::user()->phone;
-			$PayDate = date('Y-m-d H:i:s', strtotime($x . " +672 hours"));
+			//$PayDate = date('Y-m-d H:i:s', strtotime($x . " +672 hours"));
+			$PayDate=$request->payday;
 
 			Member::create([
 				'name' => $name,
@@ -307,6 +327,13 @@ class UserController extends Controller
 				array_push($payment,$data);
 			}
 			return response()->json(compact('payment'));
+		}
+
+		public function getSchemeMember($scheme){
+			$user=\Auth::user();
+			$email=$user->email;
+			$member=Scheme_member::where([['scheme','=',$scheme],['email','=',$email]])->first();
+			return response()->json(compact('member'));
 		}
 
 
