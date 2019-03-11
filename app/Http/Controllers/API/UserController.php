@@ -274,6 +274,10 @@ class UserController extends Controller
 			$members=Scheme_member::where('scheme',$scheme)->get();
 			return response()->json(compact('members'));
 		}
+		public function pay($id,Request $request)
+		{
+			
+		}
 
 
 }
