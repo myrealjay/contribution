@@ -64,6 +64,29 @@ class AdminController extends Controller
             'Members'=>  'required'
         ]);
 
+        #::::::::GETTING THE PAY DATE:::::::
+        $num_of_members=$request['Members'];
+        $x = date('Y-m-d H:i:s', time());
+        $PayDate = date('Y-m-d H:i:s', strtotime($x . " +672 hours"));
+        $paydays=[];
+
+        array_push($paydays,$PayDate);
+
+        $x=$PayDate;
+        
+        for($i=0;$i<$num_of_members-1;$i++){
+            $date = date('Y-m-d H:i:s', strtotime($x . " +168 hours"));
+            array_push($paydays,$date);
+            $x=$date;
+        }
+        Payday::create([
+                'scheme' => $request['Name'],
+                'payday' => $paydays,
+            ]);
+
+        dd($paydays);
+        #:::::GETTING THE PAY DATE:::::::
+
         Admin::create([
             'Name' => $request['Name'],
             'Amount' => $request['Amount'],
