@@ -3,6 +3,7 @@
 namespace App\Http\Controllers;
 
 use App\Admin;
+use App\Payday;
 use App\User;
 use Mail;
 use App\Member;
@@ -74,15 +75,16 @@ class AdminController extends Controller
 
         $x=$PayDate;
         
-        for($i=0;$i<$num_of_members-1;$i++){
+        for($i=0;$i<$num_of_members;$i++){
             $date = date('Y-m-d H:i:s', strtotime($x . " +168 hours"));
             array_push($paydays,$date);
             $x=$date;
-        }
-        Payday::create([
+            Payday::create([
                 'scheme' => $request['Name'],
-                'payday' => $paydays,
+                'payday' => $paydays[$i],
             ]);
+        }
+        
 
         dd($paydays);
         #:::::GETTING THE PAY DATE:::::::
