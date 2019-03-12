@@ -17,6 +17,7 @@ use Illuminate\Support\Facades\Mail;
 use App\Mail\SendMailable;
 use DB;
 use App\Detail;
+use App\Payday;
 
 class UserController extends Controller
 {
@@ -61,12 +62,53 @@ class UserController extends Controller
 			'email' => $request->get('email'),
 			'password' => Hash::make($request->get('password')),
 			'phone' => $request->get('phone'),
+			'platform'=>$request->platform,
 		]);
 		Mail::to($request['email'])->send(new SendMailable($message));
 		
 		$token = JWTAuth::fromUser($user);
 
 		return response()->json(compact('user','token'),200);
+	}
+
+	public function getUnallocatedDays(Request $request){
+		$scheme=$request->scheme;
+		$members=Scheme_member::where('scheme',$scheme)->get();
+		$num=count($members);
+		$data=Payday::where('scheme',$scheme)->skip(0)->take($num)->get();
+		
+		$paydays=[];
+
+		foreach($data as $payday){
+			if($payday->active==1) array_push($paydays,$payday->payday);
+		}
+
+		return response()->json(compact('paydays'),200);
+	}
+
+	public function updatePayDay(Request $request){
+		$scheme=$request->scheme;
+		$payday=$request->payday;
+		$email=$request->email;
+		$oldPayDay=$request->oldPayDay;
+
+		$x = date('Y-m-d', time());
+		$date = date('Y-m-d', strtotime($x . " +96 hours"));
+
+		if($payday < $date){
+			return response()->json(['error'=>'Sorry the date cannot be chosen']);
+		}
+
+		$member=Scheme_member::where([['scheme','=',$scheme],['email','=',$email]])->first();
+		$member->update(['payday'=>$payday]);
+
+		$data=Payday::where([['scheme','=',$scheme],['payday','=',$payday]])->first();
+		$data->update(['active'=>0]);
+		
+		$data2=Payday::where([['scheme','=',$scheme],['payday','=',$oldPayDay]])->first();
+		$data2->update(['active'=>1]);
+
+		return response()->json(['message'=>'Payday changed successfully']);
 	}
 
 	public function new_scheme(Request $request)
@@ -84,6 +126,26 @@ class UserController extends Controller
 		if($request['Members']<5){
 			return response()->json(['error'=>'This scheme can take a minimum of 5 members'], 200);
 		}
+
+		$num_of_members=$request['Members'];
+        $x = date('Y-m-d', time());
+        $PayDate = date('Y-m-d', strtotime($x . " +672 hours"));
+        $paydays=[];
+
+        array_push($paydays,$PayDate);
+
+        $x=$PayDate;
+        
+        for($i=0;$i<$num_of_members;$i++){
+            $date = date('Y-m-d', strtotime($x . " +168 hours"));
+            array_push($paydays,$date);
+            $x=$date;
+            Payday::create([
+                'scheme' => $request['Name'],
+                'payday' => $paydays[$i],
+            ]);
+        }
+        
 		$data = Admin::create([
 			'Name' => $request['Name'],
 			'Amount' => $request['Amount'],
@@ -113,6 +175,9 @@ class UserController extends Controller
 		Member::where('email', $email)->where('scheme',$request['scheme'])->update([
 			'active' => 1,
 		]);
+		$data2=Payday::where([['scheme','=',$request['scheme']],['payday','=',$date]])->first();
+		$data2->update(['active'=>0]);
+	
 
 		return response()->json(['message'=>'successfully joined'],200);
 	}
@@ -180,108 +245,97 @@ class UserController extends Controller
 	public function getPayDays($num,Request $request){
 		$scheme=$request->scheme;
 
-		$num_of_members=$num;
-		$x = date('Y-m-d H:i:s', time());
-		$PayDate = date('Y-m-d H:i:s', strtotime($x . " +672 hours"));
-		$paydays=[];
-
-		array_push($paydays,$PayDate);
-
-		$x=$PayDate;
-		
-		for($i=0;$i<$num_of_members-1;$i++){
-			$date = date('Y-m-d H:i:s', strtotime($x . " +168 hours"));
-			$date2=date('Y-m-d', strtotime($x . " +168 hours"));
-			$scheme_member=Scheme_member::whereDate('payday', '=', $date2)->first();
-			if(!$scheme_member){
-				array_push($paydays,$date);
-			}
-			
-			$x=$date;
-		}
-
+		$paydays=Payday::where([['scheme','=',$scheme],['active','=',1]])->pluck('payday');;
 		return response()->json(compact('paydays'));
 	}
 
-		public function RegMember(Request $request)
-		{
-			$validator = Validator::make($request->all(), [
-				'name'=>  'required',
-				'email'=>  'required',
-				'phone'=>  'required'
-			]);
+	public function RegMember(Request $request)
+	{
+		$validator = Validator::make($request->all(), [
+			'name'=>  'required',
+			'email'=>  'required',
+			'phone'=>  'required'
+		]);
 
-			$email=$request->email;
-			$phone=$request->phone;
-			$name=$request->name;
-			$useremail = \Auth::user()->email;
+		$email=$request->email;
+		$phone=$request->phone;
+		$name=$request->name;
+		$useremail = \Auth::user()->email;
 
-			if($validator->fails()){
-				return response()->json($validator->errors()->toJson(), 200);
-			}
+		$registered=Member::where('scheme',$request['scheme'])->first();
+		if($registered){
+			return response()->json(['error'=>'Scheme member already added'], 200);
+		}
 
-			$x = date('Y-m-d H:i:s', time());
-			$date = date('Y-m-d H:i:s', strtotime($x . " +48 hours"));
-			
-			for ($i=0; $i < count($email); $i++) { 
-				Member::create([
-					'name' => $name[$i],
-					'email' => $email[$i],
-					'phone' => $phone[$i],
-					'scheme' => $request['scheme'],
-					'amount' => $request['amount'],
-					'expire' => $date,
-					'creator' => $useremail,
-				]);
-			}
-		#:::::COLLECT THE BELOW DATA::::::
-			$name = \Auth::user()->name;
-			$email = \Auth::user()->email;
-			$phone = \Auth::user()->phone;
-			//$PayDate = date('Y-m-d H:i:s', strtotime($x . " +672 hours"));
-			$PayDate=$request->payday;
+		if($validator->fails()){
+			return response()->json($validator->errors()->toJson(), 200);
+		}
 
+		$x = date('Y-m-d', time());
+		$date = date('Y-m-d', strtotime($x . " +48 hours"));
+		
+		for ($i=0; $i < count($email); $i++) { 
 			Member::create([
-				'name' => $name,
-				'email' => $email,
-				'phone' => $phone,
+				'name' => $name[$i],
+				'email' => $email[$i],
+				'phone' => $phone[$i],
 				'scheme' => $request['scheme'],
 				'amount' => $request['amount'],
 				'expire' => $date,
 				'creator' => $useremail,
 			]);
-    #:::::HERE THE SCHEME CREATOR IS THE FIRST ACTIVE MEMBER OF THE SCHEME::::::::
-			Scheme_member::create([
-				'scheme' => $request['scheme'],
-				'name' => $name,
-				'email' => $email,
-				'phone' => $phone,
-				'amount' => $request['amount'],
-				'expire' => $date,
-				'payday' => $PayDate,
-			]);
-	
-	
-    #::::THE SCHEME CREATOR SHOULD BE AN ACTIVE MEMBER::::::
-		Member::where('email', $email)->where('scheme',$request['scheme'])->update([
-			'active' => 1, 
+		}
+	#:::::COLLECT THE BELOW DATA::::::
+		$name = \Auth::user()->name;
+		$email = \Auth::user()->email;
+		$phone = \Auth::user()->phone;
+		//$PayDate = date('Y-m-d H:i:s', strtotime($x . " +672 hours"));
+		$PayDate=$request->payday;
+
+		Member::create([
+			'name' => $name,
+			'email' => $email,
+			'phone' => $phone,
+			'scheme' => $request['scheme'],
+			'amount' => $request['amount'],
+			'expire' => $date,
+			'creator' => $useremail,
+		]);
+#:::::HERE THE SCHEME CREATOR IS THE FIRST ACTIVE MEMBER OF THE SCHEME::::::::
+		Scheme_member::create([
+			'scheme' => $request['scheme'],
+			'name' => $name,
+			'email' => $email,
+			'phone' => $phone,
+			'amount' => $request['amount'],
+			'expire' => $date,
+			'payday' => $PayDate,
+		]);
+
+		$data=Payday::where([['scheme','=',$request['scheme']],['payday','=',$PayDate]])->first();
+		$data->update(['active'=>0]);
+
+
+#::::THE SCHEME CREATOR SHOULD BE AN ACTIVE MEMBER::::::
+	Member::where('email', $email)->where('scheme',$request['scheme'])->update([
+		'active' => 1, 
+	]); 
+
+		#::::UPDATE THE ADMIN TABLE TO SHOW THAT MEMBERS HAVE BEEN ADDED::::::
+		Admin::where('creator', $email)->where('Name',$request['scheme'])->update([
+			'mem_added' => 1, 
 		]); 
 
-			#::::UPDATE THE ADMIN TABLE TO SHOW THAT MEMBERS HAVE BEEN ADDED::::::
-			Admin::where('creator', $email)->where('Name',$request['scheme'])->update([
-                'mem_added' => 1, 
-            ]); 
-    
-        #:::::::::::GET THE NAME OF THE USER AND SAVE IN $inv:::::::::::::
-		$inv = \Auth::user()->name;
-         #:::::::::::GET THE NAME OF THE USER AND SAVE IN $inv:::::::::::::
+	#:::::::::::GET THE NAME OF THE USER AND SAVE IN $inv:::::::::::::
+	$inv = \Auth::user()->name;
+		#:::::::::::GET THE NAME OF THE USER AND SAVE IN $inv:::::::::::::
 
-        #::::::::::SENDING MAIL TO EACH SCHEME MEMBERS::::::::::::::
-			/*$message = 'by '.$inv.'. the group will be contriuting NGN'.$request['amount'].' per week which will be disbussed to selected members every week in a round robin format. Login using the link below in order to join new members of the scheme';
-			Mail::to($request['email'])->send(new Members_mail($message));*/
+	#::::::::::SENDING MAIL TO EACH SCHEME MEMBERS::::::::::::::
+		/*$message = 'by '.$inv.'. the group will be contriuting NGN'.$request['amount'].' per week which will be disbussed to selected members every week in a round robin format. Login using the link below in order to join new members of the scheme';
+		Mail::to($request['email'])->send(new Members_mail($message));*/
 
-			return response()->json(['message'=>'members added successfully'],200);
-		}
+		return response()->json(['message'=>'members added successfully'],200);
+	}
 
 
 		public function getSchemeMembers($scheme){
@@ -342,6 +396,40 @@ class UserController extends Controller
 			$member=Scheme_member::where([['scheme','=',$scheme],['email','=',$email]])->first();
 			return response()->json(compact('member'));
 		}
+
+	public function getBvn(Request $request)
+	{
+		//Initialization Code
+		$curl = curl_init();
+
+		$bvn = $request->bvn;  
+
+		curl_setopt_array($curl, array(
+			CURLOPT_URL => "https://api.paystack.co/bank/resolve_bvn/".$bvn,
+			CURLOPT_RETURNTRANSFER => true,
+			CURLOPT_CUSTOMREQUEST => "GET",
+			CURLOPT_POSTFIELDS => json_encode([
+			'bvn'=>$bvn
+			]),
+			CURLOPT_HTTPHEADER => [
+			"authorization: Bearer sk_test_7886fc90b896993395fbc27c623cacdf2bbf0bf6", //replace this with your own test key
+			"content-type: application/json",
+			"cache-control: no-cache"
+			],
+		));
+
+		$response = curl_exec($curl);
+		$err = curl_error($curl);
+
+		if($err){
+			// there was an error contacting the Paystack API
+			return response()->json(['error'=>$err],200);
+		}
+
+		$tranx = json_decode($response, true);
+		//dd($tranx);
+		return response()->json(['data'=>$tranx],200);
+	}
 
 
 }
