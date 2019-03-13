@@ -19,6 +19,7 @@ use DB;
 use App\Detail;
 use App\Payday;
 use App\Bvndata;
+use App\Bvnpayment;
 
 class UserController extends Controller
 {
@@ -429,17 +430,21 @@ class UserController extends Controller
 
 		$tranx = json_decode($response, true);
 
+		if($tranx['status']==false){
+			return response()->json(['error'=>'unable to resolve bvn'],200);
+		}
+
 		$user=\Auth::user();
 		
-		if($tranx.data){
+		if($tranx['data']){
 			$checker=Bvndata::where('user_id',$user->id)->first();
 			if(!$checker){
 				Bvndata::create(
 					[
-						"firstname"=>$tranx.data.first_name,
-						"lastname"=>$tranx.data.last_name,
-						"dob"=>$trans.data.formatted_dob,
-						"phone"=>$trans.data.mobile,
+						"firstname"=>$tranx['data']['first_name'],
+						"lastname"=>$tranx['data']['last_name'],
+						"dob"=>$tranx['data']['formatted_dob'],
+						"phone"=>$tranx['data']['mobile'],
 						"user_id"=>$user->id,
 					]
 				);
@@ -447,6 +452,40 @@ class UserController extends Controller
 		}
 
 		return response()->json(['success'=>'bvn was successfuly accessed'],200);
+	}
+
+	public function checkBvn(){
+		$user=\Auth::user();
+		$bvndata=Bvndata::where('user_id',$user->id)->first();
+		if($bvndata){
+			return response()->json(['success'=>'bvn has been saved'],200);
+		}
+		return response()->json(['error'=>'bvn was not found'],200);
+	}
+
+	public function makeBvnPayment(Request $request){
+		$user=\Auth::user();
+		$amount=$request->amount;
+		$authcode=$request->authcode;
+
+		$user->update([
+			"authorization_token"=>$authcode
+		]);
+
+		Bvnpayment::create([
+			"user_id"=>$user->id,
+			"amount"=>$amount
+		]);
+		return response()->json(['success'=>'payment was successfully made'],200);
+	}
+
+	public function checkBvnPayment(){
+		$user=\Auth::user();
+		$bvndata=Bvnpayment::where('user_id',$user->id)->first();
+		if($bvndata){
+			return response()->json(['success'=>'bvn has been saved'],200);
+		}
+		return response()->json(['error'=>'bvn was not found'],200);
 	}
 
 
