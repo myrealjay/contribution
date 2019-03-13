@@ -18,6 +18,7 @@ use App\Mail\SendMailable;
 use DB;
 use App\Detail;
 use App\Payday;
+use App\Bvndata;
 
 class UserController extends Controller
 {
@@ -427,8 +428,25 @@ class UserController extends Controller
 		}
 
 		$tranx = json_decode($response, true);
-		//dd($tranx);
-		return response()->json(['data'=>$tranx],200);
+
+		$user=\Auth::user();
+		
+		if($tranx.data){
+			$checker=Bvndata::where('user_id',$user->id)->first();
+			if(!$checker){
+				Bvndata::create(
+					[
+						"firstname"=>$tranx.data.first_name,
+						"lastname"=>$tranx.data.last_name,
+						"dob"=>$trans.data.formatted_dob,
+						"phone"=>$trans.data.mobile,
+						"user_id"=>$user->id,
+					]
+				);
+			}
+		}
+
+		return response()->json(['success'=>'bvn was successfuly accessed'],200);
 	}
 
 
