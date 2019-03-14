@@ -8,6 +8,6 @@ class Bvnpayment extends Model
 {
    
     protected $fillable = [
-        'user_id', 'amount',
+        'user_id', 'amount','scheme',
     ];
 }

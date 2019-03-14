@@ -467,6 +467,7 @@ class UserController extends Controller
 		$user=\Auth::user();
 		$amount=$request->amount;
 		$authcode=$request->authcode;
+		$scheme=$request->scheme;
 
 		$user->update([
 			"authorization_token"=>$authcode
@@ -474,14 +475,16 @@ class UserController extends Controller
 
 		Bvnpayment::create([
 			"user_id"=>$user->id,
-			"amount"=>$amount
+			"amount"=>$amount,
+			"scheme"=>$scheme
 		]);
 		return response()->json(['success'=>'payment was successfully made'],200);
 	}
 
-	public function checkBvnPayment(){
+	public function checkBvnPayment(Request $request){
 		$user=\Auth::user();
-		$bvndata=Bvnpayment::where('user_id',$user->id)->first();
+		$scheme=$request->scheme;
+		$bvndata=Bvnpayment::where([['user_id','=',$user->id],['scheme','=',$scheme]])->first();
 		if($bvndata){
 			return response()->json(['success'=>'bvn has been saved'],200);
 		}
