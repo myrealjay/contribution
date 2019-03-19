@@ -23,6 +23,9 @@ use App\Bvnpayment;
 
 class UserController extends Controller
 {
+
+	//login in
+
 	public function authenticate(Request $request)
 	{
 		$credentials = $request->only('email', 'password');
@@ -41,6 +44,8 @@ class UserController extends Controller
 
 		return response()->json(compact('token'));
 	}
+
+	//registration
 
 	public function register(Request $request)
 	{
@@ -73,6 +78,8 @@ class UserController extends Controller
 		return response()->json(compact('user','token'),200);
 	}
 
+	//Get days a user can change to collect cash
+
 	public function getUnallocatedDays(Request $request){
 		$scheme=$request->scheme;
 		$members=Scheme_member::where('scheme',$scheme)->get();
@@ -87,6 +94,8 @@ class UserController extends Controller
 
 		return response()->json(compact('paydays'),200);
 	}
+
+	//change your pay day
 
 	public function updatePayDay(Request $request){
 		$scheme=$request->scheme;
@@ -112,6 +121,20 @@ class UserController extends Controller
 
 		return response()->json(['message'=>'Payday changed successfully']);
 	}
+
+	//check if a scheme is available
+
+	public function checkAvailability($scheme){
+		$admin=Admin::where('Name',$scheme)->first();
+		if($admin){
+			return response()->json(['error'=>'scheme already exist']);
+		}
+		else{
+			return response()->json(['success'=>'scheme is available for creation']);
+		}
+	}
+
+	//create a new scheme
 
 	public function new_scheme(Request $request)
 	{
@@ -191,12 +214,20 @@ class UserController extends Controller
 		return response()->json(compact('data'),200);
 	}
 
+
+	//Joining a scheme
+
 	public function join(Request $request)
-	{
-		$date;
-		$member=DB::table('scheme_members')->orderBy('id', 'desc')->where('scheme',$request['scheme'])->first();
-		//$x = $member->payday;
-		$date =$request->payday; //date('Y-m-d H:i:s', strtotime($x . " +168 hours"));
+	{ 
+
+		//check if scheme has expired
+		$member=Member::where('email', $request['email'])->where('scheme',$request['scheme'])->first();
+		$curdate=date('Y-m-d');
+		$expirydate=date($member->expire);
+		
+		if($curdate>$expirydate){
+			return response()->json(['error'=>'Sorry this scheme has exceeded the time you can join']);
+		}
 		
 		$data = Scheme_member::create([
 			'scheme' => $request['scheme'],
@@ -204,18 +235,24 @@ class UserController extends Controller
 			'email' => $request['email'],
 			'phone' => $request['phone'],
 			'amount' => $request['amount'],
-			'payday' => $date,
+			'payday' => $request['payday'],
 		]);
-		$email=$request['email'];
-		Member::where('email', $email)->where('scheme',$request['scheme'])->update([
+
+		//update the status of this guy
+
+		$member->update([
 			'active' => 1,
 		]);
-		$data2=Payday::where([['scheme','=',$request['scheme']],['payday','=',$date]])->first();
+
+		//update the payday also
+		$data2=Payday::where([['scheme','=',$request['scheme']],['payday','=',$request['payday']]])->first();
 		$data2->update(['active'=>0]);
 	
 
 		return response()->json(['message'=>'successfully joined'],200);
 	}
+
+	//get all scheme created by you
 
 	public function MyScheme()
 	{
@@ -226,6 +263,8 @@ class UserController extends Controller
 		$scheme = Member::where([['email',"=", $email],['creator','!=',$email]])->get();
 		return response()->json(compact('my_scheme','scheme'),200);
 	}
+
+	//verify a user opun registration
 
 	public function verifynow(Request $request)
 	{
@@ -250,6 +289,8 @@ class UserController extends Controller
 		}
 		
 	}
+
+	//check if user authentication is still ok
 
 	public function getAuthenticatedUser()
 	{
@@ -277,12 +318,16 @@ class UserController extends Controller
 
 	}
 
+	//get days of payments
+
 	public function getPayDays($num,Request $request){
 		$scheme=$request->scheme;
 
 		$paydays=Payday::where([['scheme','=',$scheme],['active','=',1]])->pluck('payday');;
 		return response()->json(compact('paydays'));
 	}
+
+	//Register new members
 
 	public function RegMember(Request $request)
 	{
@@ -340,65 +385,78 @@ class UserController extends Controller
 		return response()->json(['message'=>'members added successfully'],200);
 	}
 
+	//get scheme members
 
-		public function getSchemeMembers($scheme){
-			$members=Member::where('scheme',$scheme)->get();
-			return response()->json(compact('members'));
+	public function getSchemeMembers($scheme){
+		$members=Member::where('scheme',$scheme)->get();
+		return response()->json(compact('members'));
+	}
+
+	//check if someone has joined a schme
+
+	public function checkJoined($scheme){
+		$user=\Auth::user();
+		$member=Member::where([['scheme',"=",$scheme],["email","=",$user->email]])->get()->first();
+		if($member){
+			return response()->json(["message"=>$member->active]);
 		}
+		return response()->json(['error'=>"member not found"]);
+	}
 
-		public function checkJoined($scheme){
-			$user=\Auth::user();
-			$member=Member::where([['scheme',"=",$scheme],["email","=",$user->email]])->get()->first();
-			if($member){
-				return response()->json(["message"=>$member->active]);
-			}
-			return response()->json(['error'=>"member not found"]);
-		}
+	//get all active scheme members
 
-		public function getActiveMembers($scheme){
-			$members=Scheme_member::where('scheme',$scheme)->get();
-			return response()->json(compact('members'));
-		}
+	public function getActiveMembers($scheme){
+		$members=Scheme_member::where('scheme',$scheme)->get();
+		return response()->json(compact('members'));
+	}
 
-		public function pay(Request $request)
-		{
-			$input=$request->except('authcode');
-			//check for the week the person is paying
-			$week=count(Detail::where('scheme_member_id',$request->scheme_member_id)->get())+1;
-			$input['week']=$week;
-			$payment=Detail::create($input);
+	//save payment details
 
-			$authcode=$request->authcode;
+	public function pay(Request $request)
+	{
+		$input=$request->except('authcode');
+		//check for the week the person is paying
+		$week=count(Detail::where('scheme_member_id',$request->scheme_member_id)->get())+1;
+		$input['week']=$week;
+		$payment=Detail::create($input);
 
-			$user=\Auth::user();
-			$user->update([
-				'authorization_token'=>$authcode
-			]);
-			if($payment){
-				return response()->json(compact('payment'));
-			}
-			return response()->json(['error'=>'Payment was not successful']);
-		}
+		$authcode=$request->authcode;
 
-		public function getPayment($scheme){
-			$payments=DB::table('details')->orderBy('week')->where('scheme',$scheme)->get();
-			$payment=[];
-			foreach($payments as $pay){
-				$member=Scheme_member::where('id',$pay->scheme_member_id)->first();
-				$data=[];
-				array_push($data,$pay);
-				array_push($data,$member);
-				array_push($payment,$data);
-			}
+		$user=\Auth::user();
+		$user->update([
+			'authorization_token'=>$authcode
+		]);
+		if($payment){
 			return response()->json(compact('payment'));
 		}
+		return response()->json(['error'=>'Payment was not successful']);
+	}
 
-		public function getSchemeMember($scheme){
-			$user=\Auth::user();
-			$email=$user->email;
-			$member=Scheme_member::where([['scheme','=',$scheme],['email','=',$email]])->first();
-			return response()->json(compact('member'));
+	//get payment details
+
+	public function getPayment($scheme){
+		$payments=DB::table('details')->orderBy('week')->where('scheme',$scheme)->get();
+		$payment=[];
+		foreach($payments as $pay){
+			$member=Scheme_member::where('id',$pay->scheme_member_id)->first();
+			$data=[];
+			array_push($data,$pay);
+			array_push($data,$member);
+			array_push($payment,$data);
 		}
+		return response()->json(compact('payment'));
+	}
+
+	//get all scheme members
+
+	public function getSchemeMember($scheme){
+		$user=\Auth::user();
+		$email=$user->email;
+		$member=Scheme_member::where([['scheme','=',$scheme],['email','=',$email]])->first();
+		return response()->json(compact('member'));
+	}
+
+	//verify bvn
 
 	public function getBvn(Request $request)
 	{
@@ -455,6 +513,8 @@ class UserController extends Controller
 		return response()->json(['success'=>'bvn was successfuly accessed'],200);
 	}
 
+	//check if bvn data has been saved
+
 	public function checkBvn(){
 		$user=\Auth::user();
 		$bvndata=Bvndata::where('user_id',$user->id)->first();
@@ -463,6 +523,8 @@ class UserController extends Controller
 		}
 		return response()->json(['error'=>'bvn was not found'],200);
 	}
+
+	//make 100 payment
 
 	public function makeBvnPayment(Request $request){
 		$user=\Auth::user();
@@ -481,6 +543,8 @@ class UserController extends Controller
 		]);
 		return response()->json(['success'=>'payment was successfully made'],200);
 	}
+
+	//check id someone has paid 100
 
 	public function checkBvnPayment(Request $request){
 		$user=\Auth::user();
