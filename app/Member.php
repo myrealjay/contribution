@@ -7,6 +7,6 @@ use Illuminate\Database\Eloquent\Model;
 class Member extends Model
 {
     protected $fillable = [
-        'name', 'email', 'phone', 'scheme', 'amount', 'expire', 'creator',
+        'name', 'email', 'phone', 'scheme', 'amount', 'expire', 'creator','active',
     ];
 }

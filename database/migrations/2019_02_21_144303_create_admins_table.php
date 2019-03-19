@@ -18,6 +18,8 @@ class CreateAdminsTable extends Migration
             $table->string('Name')->unique();
             $table->string('Amount');
             $table->string('Members');
+            $table->string('startdate');
+            $table->string('enddate');
             $table->timestamps();
         });
     }

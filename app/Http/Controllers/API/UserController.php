@@ -122,6 +122,7 @@ class UserController extends Controller
 			'Members'=>  'required'
 		]);
 
+
 		if($validator->fails()){
 			return response()->json($validator->errors()->toJson(), 200);
 		}
@@ -130,30 +131,62 @@ class UserController extends Controller
 		}
 
 		$num_of_members=$request['Members'];
-        $x = date('Y-m-d', time());
-        $PayDate = date('Y-m-d', strtotime($x . " +672 hours"));
-        $paydays=[];
+		$paydays=$request->paydays;
+		
+		//reformart the dates
+		$startDate=date_format(date_create($request->startdate),"Y-m-d");
+		$endDate=date_format(date_create($request->enddate),"Y-m-d");
+		$selpayday=date_format(date_create($request->selpayday),"Y-m-d");
 
-        array_push($paydays,$PayDate);
+		foreach($paydays as $payday){
+			Payday::create([
+				'scheme' => $request['Name'],
+				'payday' => date_format(date_create($payday),"Y-m-d"),
+			]);
+		}
 
-        $x=$PayDate;
-        
-        for($i=0;$i<$num_of_members;$i++){
-            $date = date('Y-m-d', strtotime($x . " +168 hours"));
-            array_push($paydays,$date);
-            $x=$date;
-            Payday::create([
-                'scheme' => $request['Name'],
-                'payday' => $paydays[$i],
-            ]);
-        }
-        
 		$data = Admin::create([
 			'Name' => $request['Name'],
 			'Amount' => $request['Amount'],
 			'Members' => $request['Members'],
-			'creator'=>$email
+			'creator'=>$email,
+			'startdate'=>$startDate,
+			'enddate'=>$endDate
 		]);
+
+		//register the scheme creator
+		#:::::COLLECT THE BELOW DATA::::::
+		$name = \Auth::user()->name;
+		$phone = \Auth::user()->phone;
+
+		Member::create([
+			'name' => $name,
+			'email' => $email,
+			'phone' => $phone,
+			'scheme' => $request['Name'],
+			'amount' => $request['Amount'],
+			'expire' => $startDate,
+			'creator' => $email,
+			'active'=>1
+		]);
+
+		#:::::HERE THE SCHEME CREATOR IS THE FIRST ACTIVE MEMBER OF THE SCHEME::::::::
+		Scheme_member::create([
+			'scheme' => $request['Name'],
+			'name' => $name,
+			'email' => $email,
+			'phone' => $phone,
+			'amount' => $request['Amount'],
+			'expire' => $startDate,
+			'payday' => $selpayday,
+		]);
+
+		//deselect the payday selected by this user
+
+		$payday=Payday::where([['scheme','=',$request['Name']],['payday','=',$selpayday]])->first();
+
+		$payday->update(['active'=>0]);
+
 		
 		return response()->json(compact('data'),200);
 	}
@@ -264,17 +297,20 @@ class UserController extends Controller
 		$name=$request->name;
 		$useremail = \Auth::user()->email;
 
-		$registered=Member::where('scheme',$request['scheme'])->first();
+		$registered=Admin::where([['Name','=',$request['scheme']],['mem_added','=',1]])->first();
 		if($registered){
 			return response()->json(['error'=>'Scheme member already added'], 200);
+		}
+
+		$registered2=Admin::where('Name',$request['scheme'])->first();
+		$date='';
+		if($registered2){
+			$date=$registered2->startdate;
 		}
 
 		if($validator->fails()){
 			return response()->json($validator->errors()->toJson(), 200);
 		}
-
-		$x = date('Y-m-d', time());
-		$date = date('Y-m-d', strtotime($x . " +48 hours"));
 		
 		for ($i=0; $i < count($email); $i++) { 
 			Member::create([
@@ -287,52 +323,17 @@ class UserController extends Controller
 				'creator' => $useremail,
 			]);
 		}
-	#:::::COLLECT THE BELOW DATA::::::
-		$name = \Auth::user()->name;
-		$email = \Auth::user()->email;
-		$phone = \Auth::user()->phone;
-		//$PayDate = date('Y-m-d H:i:s', strtotime($x . " +672 hours"));
-		$PayDate=$request->payday;
-
-		Member::create([
-			'name' => $name,
-			'email' => $email,
-			'phone' => $phone,
-			'scheme' => $request['scheme'],
-			'amount' => $request['amount'],
-			'expire' => $date,
-			'creator' => $useremail,
-		]);
-#:::::HERE THE SCHEME CREATOR IS THE FIRST ACTIVE MEMBER OF THE SCHEME::::::::
-		Scheme_member::create([
-			'scheme' => $request['scheme'],
-			'name' => $name,
-			'email' => $email,
-			'phone' => $phone,
-			'amount' => $request['amount'],
-			'expire' => $date,
-			'payday' => $PayDate,
-		]);
-
-		$data=Payday::where([['scheme','=',$request['scheme']],['payday','=',$PayDate]])->first();
-		$data->update(['active'=>0]);
-
-
-#::::THE SCHEME CREATOR SHOULD BE AN ACTIVE MEMBER::::::
-	Member::where('email', $email)->where('scheme',$request['scheme'])->update([
-		'active' => 1, 
-	]); 
 
 		#::::UPDATE THE ADMIN TABLE TO SHOW THAT MEMBERS HAVE BEEN ADDED::::::
-		Admin::where('creator', $email)->where('Name',$request['scheme'])->update([
+		Admin::where('creator', \Auth::user()->email)->where('Name',$request['scheme'])->update([
 			'mem_added' => 1, 
 		]); 
 
-	#:::::::::::GET THE NAME OF THE USER AND SAVE IN $inv:::::::::::::
-	$inv = \Auth::user()->name;
 		#:::::::::::GET THE NAME OF THE USER AND SAVE IN $inv:::::::::::::
+		$inv = \Auth::user()->name;
+			#:::::::::::GET THE NAME OF THE USER AND SAVE IN $inv:::::::::::::
 
-	#::::::::::SENDING MAIL TO EACH SCHEME MEMBERS::::::::::::::
+		#::::::::::SENDING MAIL TO EACH SCHEME MEMBERS::::::::::::::
 		/*$message = 'by '.$inv.'. the group will be contriuting NGN'.$request['amount'].' per week which will be disbussed to selected members every week in a round robin format. Login using the link below in order to join new members of the scheme';
 		Mail::to($request['email'])->send(new Members_mail($message));*/
 
