@@ -53,6 +53,8 @@ class UserController extends Controller
 			'name' => 'required|string|max:255',
 			'email' => 'required|string|email|max:255|unique:users',
 			'password' => 'required|string',
+			'bank' => 'required|string',
+			'accountno' => 'required|string',
 			'phone' => ['required', 'string', 'min:11'],
 		]);
 
@@ -70,6 +72,8 @@ class UserController extends Controller
 			'password' => Hash::make($request->get('password')),
 			'phone' => $request->get('phone'),
 			'platform'=>$request->platform,
+			'bank'=>$request->bank,
+			'accountno'=>$request->accountno
 		]);
 		Mail::to($request['email'])->send(new SendMailable($message));
 		
